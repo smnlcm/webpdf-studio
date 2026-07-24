@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HTML to PDF V2 kalite testi</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="sheet">
+    <header class="hero">
+      <img src="logo.svg" alt="V2 logosu">
+      <div>
+        <p class="eyebrow">HTML TO PDF CONVERTER</p>
+        <h1>V2 kalite raporu</h1>
+        <p>Modern Chromium tabanlı PDF üretim doğrulaması</p>
+      </div>
+    </header>
+
+    <section class="summary">
+      <article>
+        <span>Motor</span>
+        <strong>WebView2</strong>
+      </article>
+      <article>
+        <span>Kağıt</span>
+        <strong>A4</strong>
+      </article>
+      <article>
+        <span>Dil</span>
+        <strong>Türkçe</strong>
+      </article>
+    </section>
+
+    <section class="content-card">
+      <h2>Görsel doğrulamalar</h2>
+      <ul class="checks">
+        <li>Göreli CSS dosyası yüklendi</li>
+        <li>Yerel SVG logosu görüntülendi</li>
+        <li>CSS Grid üç sütun olarak çizildi</li>
+        <li>Gradyan, gölge ve yuvarlatılmış köşeler korundu</li>
+        <li>Türkçe karakterler: ğüşiöç İĞÜŞÖÇ - € ₺</li>
+      </ul>
+      <p id="javascript-marker" class="javascript-marker">
+        JavaScript kontrol ediliyor...
+      </p>
+    </section>
+
+    <footer>
+      <span>HTML to PDF V2</span>
+      <span>Sayfa 1</span>
+    </footer>
+  </main>
+
+  <main class="sheet page-break">
+    <header class="section-header">
+      <div>
+        <p class="eyebrow">SAYFA VE TABLO TESTİ</p>
+        <h2>Türkçe fatura örneği</h2>
+      </div>
+      <span class="status">BAŞARILI</span>
+    </header>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Kalem</th>
+          <th>Açıklama</th>
+          <th>Adet</th>
+          <th>Tutar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>01</td><td>Tasarım hizmeti</td><td>1</td><td>4.250,00 ₺</td></tr>
+        <tr><td>02</td><td>HTML şablonu</td><td>3</td><td>2.700,00 ₺</td></tr>
+        <tr><td>03</td><td>PDF dışa aktarımı</td><td>1</td><td>1.200,00 ₺</td></tr>
+        <tr><td>04</td><td>Kalite doğrulaması</td><td>2</td><td>1.600,00 ₺</td></tr>
+        <tr><td>05</td><td>Kurulum paketi</td><td>1</td><td>900,00 ₺</td></tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3">Genel toplam</td>
+          <td>10.650,00 ₺</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <section class="note">
+      <strong>Sayfa bölünmesi doğru.</strong>
+      Bu içerik CSS <code>break-before: page</code> kuralıyla ikinci sayfada
+      başlamalıdır.
+    </section>
+
+    <footer>
+      <span>HTML to PDF V2</span>
+      <span>Sayfa 2</span>
+    </footer>
+  </main>
+
+  <script>
+    document.getElementById("javascript-marker").textContent =
+      "JavaScript çalıştı ve belge hazır.";
+  </script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/HtmlToPdfGuiV2/HtmlToPdfGuiV2.csproj" />
+  <Project Path="tools/SmokeTest/HtmlToPdfGuiV2.SmokeTest.csproj" />
+</Solution>
