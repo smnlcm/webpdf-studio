@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="tr" data-theme="light">
+  <head>
+    <meta charset="UTF-8">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'"
+    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebPDF Studio</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span>W</span>
+          </div>
+          <div>
+            <div class="brand-name">WebPDF <strong>Studio</strong></div>
+            <div class="brand-subtitle" data-i18n="brandSubtitle">
+              Profesyonel HTML → PDF
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-tools">
+          <div class="platform-badge" id="platformBadge">V3</div>
+          <label class="compact-control">
+            <span data-i18n="language">Dil</span>
+            <select id="languageSelect" aria-label="Language">
+              <option value="tr">Türkçe</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <label class="color-control" title="Accent color">
+            <span data-i18n="accentColor">Renk</span>
+            <input id="accentPicker" type="color" value="#2563eb">
+          </label>
+          <button class="icon-button" id="themeButton" type="button">
+            <span id="themeIcon" aria-hidden="true">☾</span>
+            <span id="themeLabel" data-i18n="darkTheme">Koyu tema</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="control-panel">
+          <section class="panel-section source-section">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow" data-i18n="stepOne">1 · KAYNAK</span>
+                <h1 data-i18n="sourceTitle">HTML içeriği</h1>
+              </div>
+              <div class="mode-tabs" role="tablist">
+                <button
+                  class="mode-tab active"
+                  id="fileTab"
+                  data-mode="file"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  data-i18n="htmlFile"
+                >HTML dosyası</button>
+                <button
+                  class="mode-tab"
+                  id="codeTab"
+                  data-mode="code"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-i18n="htmlCode"
+                >HTML kodu</button>
+              </div>
+            </div>
+
+            <div class="source-pane active" id="filePane">
+              <button class="file-card" id="selectFileButton" type="button">
+                <span class="file-icon" aria-hidden="true">&lt;/&gt;</span>
+                <span class="file-copy">
+                  <strong id="fileCardTitle" data-i18n="selectFile">
+                    HTML dosyası seç
+                  </strong>
+                  <small id="selectedFilePath" data-i18n="relativeAssets">
+                    CSS, görsel ve font bağlantıları korunur
+                  </small>
+                </span>
+                <span class="browse-label" data-i18n="browse">Gözat</span>
+              </button>
+            </div>
+
+            <div class="source-pane" id="codePane">
+              <textarea
+                id="htmlEditor"
+                spellcheck="false"
+                aria-label="HTML code"
+              ></textarea>
+            </div>
+          </section>
+
+          <section class="panel-section settings-section">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow" data-i18n="stepTwo">2 · AYARLAR</span>
+                <h2 data-i18n="pdfSettings">PDF ayarları</h2>
+              </div>
+              <button
+                class="text-button"
+                id="resetSettingsButton"
+                type="button"
+                data-i18n="reset"
+              >Sıfırla</button>
+            </div>
+
+            <div class="settings-grid">
+              <label class="field">
+                <span data-i18n="paper">Kağıt</span>
+                <select id="pageSize">
+                  <option value="A4">A4</option>
+                  <option value="Letter">Letter</option>
+                </select>
+              </label>
+              <label class="field">
+                <span data-i18n="orientation">Yön</span>
+                <select id="orientation">
+                  <option value="portrait" data-i18n="portrait">Dikey</option>
+                  <option value="landscape" data-i18n="landscape">Yatay</option>
+                </select>
+              </label>
+              <label class="field">
+                <span data-i18n="scale">Ölçek</span>
+                <div class="number-suffix">
+                  <input id="scale" type="number" min="0.1" max="2" step="0.05" value="1">
+                  <span>×</span>
+                </div>
+              </label>
+            </div>
+
+            <fieldset class="margin-group">
+              <legend data-i18n="margins">Kenar boşlukları (mm)</legend>
+              <div class="margin-grid">
+                <label class="field compact">
+                  <span data-i18n="top">Üst</span>
+                  <input id="marginTop" type="number" min="0" max="100" step="1" value="12">
+                </label>
+                <label class="field compact">
+                  <span data-i18n="right">Sağ</span>
+                  <input id="marginRight" type="number" min="0" max="100" step="1" value="12">
+                </label>
+                <label class="field compact">
+                  <span data-i18n="bottom">Alt</span>
+                  <input id="marginBottom" type="number" min="0" max="100" step="1" value="12">
+                </label>
+                <label class="field compact">
+                  <span data-i18n="left">Sol</span>
+                  <input id="marginLeft" type="number" min="0" max="100" step="1" value="12">
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="toggle-list">
+              <label class="toggle-row">
+                <span>
+                  <strong data-i18n="printBackground">Arka planları yazdır</strong>
+                  <small data-i18n="printBackgroundHint">Renk ve görselleri PDF’ye dahil eder</small>
+                </span>
+                <input id="printBackground" type="checkbox" checked>
+                <span class="switch" aria-hidden="true"></span>
+              </label>
+              <label class="toggle-row">
+                <span>
+                  <strong data-i18n="headerFooter">Üst/alt bilgi</strong>
+                  <small data-i18n="headerFooterHint">Başlık ve sayfa numarası ekler</small>
+                </span>
+                <input id="headerFooter" type="checkbox">
+                <span class="switch" aria-hidden="true"></span>
+              </label>
+            </div>
+          </section>
+
+          <div class="action-bar">
+            <button class="button secondary" id="previewButton" type="button">
+              <span aria-hidden="true">◉</span>
+              <span data-i18n="preview">Önizle</span>
+            </button>
+            <button class="button primary" id="saveButton" type="button">
+              <span aria-hidden="true">↓</span>
+              <span data-i18n="createPdf">PDF oluştur</span>
+            </button>
+            <button class="button danger hidden" id="cancelButton" type="button">
+              <span data-i18n="cancel">İptal</span>
+            </button>
+          </div>
+        </aside>
+
+        <section class="preview-panel">
+          <div class="preview-toolbar">
+            <div>
+              <span class="eyebrow" data-i18n="liveOutput">GERÇEK ÇIKTI</span>
+              <h2 data-i18n="previewTitle">PDF önizleme</h2>
+            </div>
+            <div class="preview-meta">
+              <span id="pageCount">—</span>
+              <span class="meta-divider"></span>
+              <span id="pdfSize">—</span>
+            </div>
+          </div>
+
+          <div class="preview-viewport" id="previewViewport">
+            <div class="empty-state" id="emptyState">
+              <div class="empty-illustration" aria-hidden="true">
+                <div class="empty-page back"></div>
+                <div class="empty-page front">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="spark">✦</div>
+              </div>
+              <h3 data-i18n="emptyTitle">PDF’niz burada görünecek</h3>
+              <p data-i18n="emptyBody">
+                Bir HTML dosyası seçin veya kodunuzu yapıştırın, ardından Önizle’ye basın.
+              </p>
+            </div>
+            <div class="loading-state hidden" id="loadingState">
+              <div class="spinner"></div>
+              <strong data-i18n="rendering">PDF hazırlanıyor…</strong>
+              <small data-i18n="renderingHint">Fontlar ve görseller yükleniyor</small>
+            </div>
+            <div class="pdf-pages hidden" id="pdfPages"></div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="statusbar">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText" data-i18n="ready">Hazır</span>
+        <span class="status-spacer"></span>
+        <span id="engineText">Chromium PDF Engine</span>
+      </footer>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
