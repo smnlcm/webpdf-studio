@@ -104,12 +104,31 @@ jobs:
         with:
           path: release-assets
 
+      - name: Prepare uniquely named release files
+        run: |
+          mkdir release-files
+          cp release-assets/webpdf-windows-x64/squirrel.windows/x64/*-Setup.exe \
+            release-files/WebPDF-Studio-Windows-x64-Setup.exe
+          cp release-assets/webpdf-windows-x64/zip/win32/x64/*.zip \
+            release-files/WebPDF-Studio-Windows-x64-Portable.zip
+          cp release-assets/webpdf-macos-intel/*.dmg \
+            release-files/WebPDF-Studio-macOS-Intel.dmg
+          cp release-assets/webpdf-macos-intel/zip/darwin/x64/*.zip \
+            release-files/WebPDF-Studio-macOS-Intel.zip
+          cp release-assets/webpdf-macos-apple-silicon/*.dmg \
+            release-files/WebPDF-Studio-macOS-Apple-Silicon.dmg
+          cp release-assets/webpdf-macos-apple-silicon/zip/darwin/arm64/*.zip \
+            release-files/WebPDF-Studio-macOS-Apple-Silicon.zip
+          cp release-assets/webpdf-linux-x64/deb/x64/*.deb \
+            release-files/WebPDF-Studio-Linux-x64.deb
+          cp release-assets/webpdf-linux-x64/zip/linux/x64/*.zip \
+            release-files/WebPDF-Studio-Linux-x64.zip
+
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mapfile -d '' files < <(find release-assets -type f -print0)
-          gh release create "$GITHUB_REF_NAME" "${files[@]}" \
+          gh release create "$GITHUB_REF_NAME" release-files/* \
             --repo "$GITHUB_REPOSITORY" \
             --title "WebPDF Studio $GITHUB_REF_NAME" \
             --generate-notes
