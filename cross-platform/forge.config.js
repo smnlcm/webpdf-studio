@@ -47,6 +47,7 @@ module.exports = {
           name: "webpdf-studio",
           productName: "WebPDF Studio",
           genericName: "HTML to PDF Converter",
+          bin: "WebPDF",
           categories: ["Office", "Utility"],
           maintainer: "WebPDF Studio",
           homepage: "https://github.com/smnlcm/webpdf-studio"
