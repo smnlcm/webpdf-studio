@@ -6,6 +6,20 @@ Windows masaüstü uygulaması.
 Windows desktop application that converts modern HTML and CSS documents to PDF
 with Microsoft Edge WebView2.
 
+## İndir / Download
+
+En güncel Windows x64 paketini GitHub Releases sayfasından indirebilirsin:
+
+Download the latest Windows x64 package from GitHub Releases:
+
+[HTML to PDF V2 - Latest Release](https://github.com/smnlcm/html-to-pdf-v2/releases/latest)
+
+ZIP dosyasını çıkar ve `HtmlToPdfGuiV2.exe` dosyasını çalıştır. Kurulum
+gerektirmez.
+
+Extract the ZIP archive and run `HtmlToPdfGuiV2.exe`. No installation is
+required.
+
 ## Özellikler / Features
 
 - HTML dosyasından veya yapıştırılan HTML kodundan PDF üretme
@@ -83,3 +97,11 @@ dotnet run --project .\tools\SmokeTest\HtmlToPdfGuiV2.SmokeTest.csproj -- `
 Windows x64 çıktısı `artifacts\publish\win-x64` klasörüne yazılır.
 
 The Windows x64 output is written to `artifacts\publish\win-x64`.
+
+## Lisans / License
+
+Bu proje [MIT Lisansı](LICENSE) ile yayımlanır. Üçüncü taraf bağımlılıklar kendi
+lisans koşullarına tabidir.
+
+This project is released under the [MIT License](LICENSE). Third-party
+dependencies remain subject to their own license terms.
