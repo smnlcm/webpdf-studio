@@ -34,7 +34,8 @@ Normal warning-free distribution requires an Apple Developer ID and
 notarization.
 
 Linux'ta önerilen paket DEB'dir; kurulum Chromium sandbox sahipliğini güvenli
-biçimde ayarlar. ZIP sürümünü kullanıyorsanız çıkardıktan sonra bir kez:
+biçimde ayarlar. ZIP sürümünü boşluk içermeyen bir klasöre çıkarın ve ardından
+bir kez:
 
 ```bash
 sudo chown root:root chrome-sandbox
@@ -43,8 +44,8 @@ sudo chmod 4755 chrome-sandbox
 ```
 
 The DEB package is recommended on Linux because installation configures the
-Chromium sandbox safely. If you use the ZIP build, run the commands above once
-inside the extracted application folder.
+Chromium sandbox safely. If you use the ZIP build, extract it to a path without
+spaces and run the commands above once inside the extracted application folder.
 
 V3 uygulaması `cross-platform` klasöründedir. Platform paketleri GitHub Actions
 üzerinde her işletim sisteminde ayrı ayrı oluşturulur.

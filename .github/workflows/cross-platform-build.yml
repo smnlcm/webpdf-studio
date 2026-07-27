@@ -311,7 +311,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          app_root="out/WebPDF Studio-linux-x64"
+          source_root="out/WebPDF Studio-linux-x64"
+          app_root="$RUNNER_TEMP/webpdf-linux-unpacked"
+          cp -a "$source_root" "$app_root"
           sudo chown root:root "$app_root/chrome-sandbox"
           sudo chmod 4755 "$app_root/chrome-sandbox"
           test "$(stat -c '%U:%G %a' "$app_root/chrome-sandbox")" = \
