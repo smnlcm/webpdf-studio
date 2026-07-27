@@ -1,11 +1,11 @@
 # WebPDF Studio
 
 Modern HTML ve CSS belgelerini gerçek PDF önizlemesiyle dönüştüren masaüstü
-uygulaması. **WebPDF Studio V3**, tek kod tabanıyla Windows, macOS ve Linux'u
+uygulaması. **WebPDF Studio V3.0.1**, tek kod tabanıyla Windows, macOS ve Linux'u
 destekler.
 
 Desktop application that converts modern HTML and CSS documents with an exact
-PDF preview. **WebPDF Studio V3** supports Windows, macOS and Linux from one
+PDF preview. **WebPDF Studio V3.0.1** supports Windows, macOS and Linux from one
 codebase.
 
 ## V3 platform desteği / V3 platform support
@@ -14,6 +14,37 @@ codebase.
 - macOS Intel — DMG ve ZIP
 - macOS Apple Silicon — DMG ve ZIP
 - Linux x64 — DEB ve ZIP
+
+macOS paketleri macOS 12 Monterey veya daha yenisini gerektirir. Mevcut açık
+kaynak paketler geçerli bir ad-hoc imzayla oluşturulur ancak Apple tarafından
+noterlenmemiştir. Bu nedenle Gatekeeper ilk açılışı engelleyebilir. İndirdiğiniz
+dosyanın `SHA256SUMS.txt` değerini doğruladıktan sonra uygulamayı Applications
+klasörüne taşıyıp şu komutla karantinadan çıkarabilirsiniz:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/WebPDF Studio.app"
+open "/Applications/WebPDF Studio.app"
+```
+
+The macOS packages require macOS 12 Monterey or newer. Current open-source
+packages have a valid ad-hoc signature but are not notarized by Apple, so
+Gatekeeper may block the first launch. After verifying the download against
+`SHA256SUMS.txt`, move the app to Applications and use the commands above.
+Normal warning-free distribution requires an Apple Developer ID and
+notarization.
+
+Linux'ta önerilen paket DEB'dir; kurulum Chromium sandbox sahipliğini güvenli
+biçimde ayarlar. ZIP sürümünü kullanıyorsanız çıkardıktan sonra bir kez:
+
+```bash
+sudo chown root:root chrome-sandbox
+sudo chmod 4755 chrome-sandbox
+./WebPDF
+```
+
+The DEB package is recommended on Linux because installation configures the
+Chromium sandbox safely. If you use the ZIP build, run the commands above once
+inside the extracted application folder.
 
 V3 uygulaması `cross-platform` klasöründedir. Platform paketleri GitHub Actions
 üzerinde her işletim sisteminde ayrı ayrı oluşturulur.
@@ -83,6 +114,21 @@ npm run check
 npm run smoke
 npm run make
 ```
+
+`npm run smoke` artık dokuz gerçek PDF çıktısında A4/Letter, yön, dört ayrı
+kenar boşluğu, ölçek, arka plan, üst/alt bilgi ve göreli dosya varlıklarını
+ve güvenli üzerine yazma/kaydetme yolunu sayısal olarak doğrular. Dil, tema,
+renk kalıcılığı ve ayar değişiminden sonra otomatik önizleme yenilemesi de
+gerçek arayüz üzerinde sınanır. GitHub Actions, aynı testleri kaynak uygulamanın
+yanında paketlenmiş EXE, macOS app/DMG/ZIP ve Linux DEB/ZIP çıktılarında
+çalıştırır.
+
+`npm run smoke` now validates A4/Letter, orientation, all four independent
+margins, scale, backgrounds, header/footer, relative file assets, and the
+safe overwrite/save path across nine real PDF outputs. It also exercises
+language, theme, accent persistence, and automatic preview refresh in the real
+UI. GitHub Actions repeats the tests against the packaged Windows, macOS, and
+Linux applications.
 
 ## Windows V2 (legacy)
 

@@ -11,30 +11,59 @@ on:
       - "v3.*"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
+  validate-version:
+    name: Validate release version
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Verify tag matches package version
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_version="$(
+            node -p "require('./cross-platform/package.json').version"
+          )"
+          expected_tag="v${package_version}"
+          if [[ "$GITHUB_REF_NAME" != "$expected_tag" ]]; then
+            echo "::error::Release tag '$GITHUB_REF_NAME' must equal '$expected_tag'."
+            exit 1
+          fi
+
   build:
     name: ${{ matrix.label }}
+    needs: validate-version
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - label: Windows x64
-            os: windows-latest
+            os: windows-2025
             arch: x64
             artifact: webpdf-windows-x64
           - label: macOS Intel
-            os: macos-latest
+            os: macos-15-intel
             arch: x64
             artifact: webpdf-macos-intel
           - label: macOS Apple Silicon
-            os: macos-latest
+            os: macos-15
             arch: arm64
             artifact: webpdf-macos-apple-silicon
           - label: Linux x64
-            os: ubuntu-latest
+            os: ubuntu-24.04
             arch: x64
             artifact: webpdf-linux-x64
 
@@ -45,6 +74,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -53,37 +84,292 @@ jobs:
           cache: npm
           cache-dependency-path: cross-platform/package-lock.json
 
-      - name: Install Linux packaging tools
+      - name: Install Linux packaging and test tools
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y fakeroot xvfb
+        run: sudo apt-get update && sudo apt-get install -y fakeroot unzip xvfb
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Download Electron and configure its Linux sandbox
+      - name: Configure the Linux Chromium sandbox source
         if: runner.os == 'Linux'
         run: |
           node node_modules/electron/install.js
-          sudo chown root node_modules/electron/dist/chrome-sandbox
+          sudo chown root:root node_modules/electron/dist/chrome-sandbox
           sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
 
       - name: Validate source
         run: npm run check
 
-      - name: Smoke test on Windows
-        if: runner.os == 'Windows'
-        run: npm run smoke
-
-      - name: Smoke test on macOS
-        if: runner.os == 'macOS' && matrix.arch == 'arm64'
-        run: npm run smoke
-
-      - name: Smoke test on Linux
-        if: runner.os == 'Linux'
-        run: xvfb-run -a npm run smoke
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Create packages
         run: npm run make -- --arch=${{ matrix.arch }}
+
+      - name: Test unpacked Windows application
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $outputDirectory = Join-Path $env:RUNNER_TEMP "webpdf-unpacked-self-test"
+          New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
+          $application = Resolve-Path "out\WebPDF Studio-win32-x64\WebPDF.exe"
+          $process = Start-Process `
+            -FilePath $application `
+            -ArgumentList "--self-test-output=$outputDirectory" `
+            -Wait `
+            -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "Unpacked Windows self-test exited with $($process.ExitCode)."
+          }
+          node scripts/verify-self-test.mjs `
+            "--self-test-output=$outputDirectory"
+
+      - name: Test Windows ZIP application
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archive = Get-ChildItem "out\make\zip\win32\x64\*.zip" |
+            Select-Object -First 1
+          if (-not $archive) {
+            throw "Windows ZIP package was not found."
+          }
+          $extractDirectory = Join-Path $env:RUNNER_TEMP "webpdf-windows-zip"
+          $outputDirectory = Join-Path $env:RUNNER_TEMP "webpdf-windows-zip-self-test"
+          New-Item -ItemType Directory -Force -Path $extractDirectory | Out-Null
+          New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
+          Expand-Archive -LiteralPath $archive.FullName -DestinationPath $extractDirectory
+          $application = Get-ChildItem `
+            -Path $extractDirectory `
+            -Recurse `
+            -File `
+            -Filter "WebPDF.exe" |
+            Select-Object -First 1
+          if (-not $application) {
+            throw "WebPDF.exe was not found in the Windows ZIP package."
+          }
+          $process = Start-Process `
+            -FilePath $application.FullName `
+            -ArgumentList "--self-test-output=$outputDirectory" `
+            -Wait `
+            -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "Windows ZIP self-test exited with $($process.ExitCode)."
+          }
+          node scripts/verify-self-test.mjs `
+            "--self-test-output=$outputDirectory"
+
+      - name: Install and test Windows Squirrel application
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem `
+            "out\make\squirrel.windows\x64\*-Setup.exe" |
+            Select-Object -First 1
+          if (-not $setup) {
+            throw "Windows Squirrel setup package was not found."
+          }
+          $setupProcess = Start-Process `
+            -FilePath $setup.FullName `
+            -ArgumentList "--silent" `
+            -Wait `
+            -PassThru
+          if ($setupProcess.ExitCode -ne 0) {
+            throw "Windows Squirrel setup exited with $($setupProcess.ExitCode)."
+          }
+
+          $installRoot = Join-Path $env:LOCALAPPDATA "webpdf_studio"
+          $application = $null
+          for ($attempt = 0; $attempt -lt 30; $attempt += 1) {
+            $application = Get-ChildItem `
+              -Path $installRoot `
+              -Recurse `
+              -File `
+              -Filter "WebPDF.exe" `
+              -ErrorAction SilentlyContinue |
+              Where-Object { $_.FullName -match '\\app-[^\\]+\\WebPDF\.exe$' } |
+              Sort-Object LastWriteTimeUtc -Descending |
+              Select-Object -First 1
+            if ($application) {
+              break
+            }
+            Start-Sleep -Seconds 1
+          }
+          if (-not $application) {
+            throw "Installed WebPDF.exe was not found below $installRoot."
+          }
+
+          $outputDirectory = Join-Path `
+            $env:RUNNER_TEMP `
+            "webpdf-windows-installed-self-test"
+          New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
+          $process = Start-Process `
+            -FilePath $application.FullName `
+            -ArgumentList "--self-test-output=$outputDirectory" `
+            -Wait `
+            -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "Installed Windows self-test exited with $($process.ExitCode)."
+          }
+          node scripts/verify-self-test.mjs `
+            "--self-test-output=$outputDirectory"
+
+          $updateExecutable = Join-Path $installRoot "Update.exe"
+          if (Test-Path $updateExecutable) {
+            $uninstallProcess = Start-Process `
+              -FilePath $updateExecutable `
+              -ArgumentList "--uninstall", "-s" `
+              -Wait `
+              -PassThru
+            if ($uninstallProcess.ExitCode -ne 0) {
+              throw "Windows Squirrel uninstall exited with $($uninstallProcess.ExitCode)."
+            }
+          }
+
+      - name: Test unpacked macOS application
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_path="out/WebPDF Studio-darwin-${{ matrix.arch }}/WebPDF Studio.app"
+          executable="$app_path/Contents/MacOS/WebPDF"
+          expected_arch="${{ matrix.arch }}"
+          if [[ "$expected_arch" == "x64" ]]; then
+            expected_arch="x86_64"
+          fi
+          file "$executable" | tee "$RUNNER_TEMP/webpdf-unpacked-file.txt"
+          grep -q "$expected_arch" "$RUNNER_TEMP/webpdf-unpacked-file.txt"
+          # This verifies the final ad-hoc bundle signature, not notarization.
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          output_directory="$RUNNER_TEMP/webpdf-macos-unpacked-self-test"
+          mkdir -p "$output_directory"
+          "$executable" "--self-test-output=$output_directory"
+          node scripts/verify-self-test.mjs \
+            "--self-test-output=$output_directory"
+
+      - name: Test macOS ZIP application
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$(find "out/make/zip/darwin/${{ matrix.arch }}" \
+            -maxdepth 1 -type f -name '*.zip' -print -quit)"
+          test -n "$archive"
+          extract_directory="$RUNNER_TEMP/webpdf-macos-zip"
+          output_directory="$RUNNER_TEMP/webpdf-macos-zip-self-test"
+          mkdir -p "$extract_directory" "$output_directory"
+          ditto -x -k "$archive" "$extract_directory"
+          app_path="$(find "$extract_directory" \
+            -maxdepth 2 -type d -name '*.app' -print -quit)"
+          test -n "$app_path"
+          executable="$app_path/Contents/MacOS/WebPDF"
+          expected_arch="${{ matrix.arch }}"
+          if [[ "$expected_arch" == "x64" ]]; then
+            expected_arch="x86_64"
+          fi
+          file "$executable" | tee "$RUNNER_TEMP/webpdf-zip-file.txt"
+          grep -q "$expected_arch" "$RUNNER_TEMP/webpdf-zip-file.txt"
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          "$executable" "--self-test-output=$output_directory"
+          node scripts/verify-self-test.mjs \
+            "--self-test-output=$output_directory"
+
+      - name: Test macOS DMG application
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="$(find out/make -maxdepth 1 -type f -name '*.dmg' -print -quit)"
+          test -n "$image"
+          mount_point="$RUNNER_TEMP/webpdf-dmg"
+          output_directory="$RUNNER_TEMP/webpdf-macos-dmg-self-test"
+          mkdir -p "$mount_point" "$output_directory"
+          hdiutil attach "$image" \
+            -nobrowse \
+            -readonly \
+            -mountpoint "$mount_point"
+          trap 'hdiutil detach "$mount_point" -force || true' EXIT
+          app_path="$(find "$mount_point" \
+            -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$app_path"
+          executable="$app_path/Contents/MacOS/WebPDF"
+          expected_arch="${{ matrix.arch }}"
+          if [[ "$expected_arch" == "x64" ]]; then
+            expected_arch="x86_64"
+          fi
+          file "$executable" | tee "$RUNNER_TEMP/webpdf-dmg-file.txt"
+          grep -q "$expected_arch" "$RUNNER_TEMP/webpdf-dmg-file.txt"
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          "$executable" "--self-test-output=$output_directory"
+          node scripts/verify-self-test.mjs \
+            "--self-test-output=$output_directory"
+          hdiutil detach "$mount_point"
+          trap - EXIT
+
+      - name: Test unpacked Linux application
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_root="out/WebPDF Studio-linux-x64"
+          sudo chown root:root "$app_root/chrome-sandbox"
+          sudo chmod 4755 "$app_root/chrome-sandbox"
+          test "$(stat -c '%U:%G %a' "$app_root/chrome-sandbox")" = \
+            "root:root 4755"
+          output_directory="$RUNNER_TEMP/webpdf-linux-unpacked-self-test"
+          mkdir -p "$output_directory"
+          xvfb-run -a "$app_root/WebPDF" \
+            "--self-test-output=$output_directory"
+          node scripts/verify-self-test.mjs \
+            "--self-test-output=$output_directory"
+
+      - name: Test Linux ZIP application
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$(find out/make/zip/linux/x64 \
+            -maxdepth 1 -type f -name '*.zip' -print -quit)"
+          test -n "$archive"
+          extract_directory="$RUNNER_TEMP/webpdf-linux-zip"
+          output_directory="$RUNNER_TEMP/webpdf-linux-zip-self-test"
+          mkdir -p "$extract_directory" "$output_directory"
+          unzip -q "$archive" -d "$extract_directory"
+          executable="$(find "$extract_directory" \
+            -type f -name WebPDF -print -quit)"
+          test -n "$executable"
+          app_root="$(dirname "$executable")"
+          sudo chown root:root "$app_root/chrome-sandbox"
+          sudo chmod 4755 "$app_root/chrome-sandbox"
+          test "$(stat -c '%U:%G %a' "$app_root/chrome-sandbox")" = \
+            "root:root 4755"
+          xvfb-run -a "$executable" \
+            "--self-test-output=$output_directory"
+          node scripts/verify-self-test.mjs \
+            "--self-test-output=$output_directory"
+
+      - name: Install and test Linux DEB application
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_path="$(realpath "$(find out/make/deb/x64 \
+            -maxdepth 1 -type f -name '*.deb' -print -quit)")"
+          test -n "$package_path"
+          package_name="$(dpkg-deb -f "$package_path" Package)"
+          sudo apt-get install -y "$package_path"
+          executable="$(dpkg -L "$package_name" | \
+            awk '/\/WebPDF$/ { print; exit }')"
+          test -n "$executable"
+          sandbox="$(dirname "$executable")/chrome-sandbox"
+          test "$(stat -c '%U:%G %a' "$sandbox")" = "root:root 4755"
+          output_directory="$RUNNER_TEMP/webpdf-linux-deb-self-test"
+          mkdir -p "$output_directory"
+          xvfb-run -a "$executable" \
+            "--self-test-output=$output_directory"
+          node scripts/verify-self-test.mjs \
+            "--self-test-output=$output_directory"
+          sudo apt-get purge -y "$package_name"
 
       - name: Upload packages
         uses: actions/upload-artifact@v7
@@ -93,19 +379,78 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  linux-ubuntu-22:
+    name: Linux x64 package on Ubuntu 22.04
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: cross-platform/package-lock.json
+
+      - name: Install verification tools and dependencies
+        working-directory: cross-platform
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          npm ci
+
+      - name: Download Linux build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: webpdf-linux-x64
+          path: cross-platform/compat-artifact
+
+      - name: Install and test DEB on Ubuntu 22.04
+        working-directory: cross-platform
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_path="$(realpath "$(find compat-artifact/deb/x64 \
+            -maxdepth 1 -type f -name '*.deb' -print -quit)")"
+          test -n "$package_path"
+          package_name="$(dpkg-deb -f "$package_path" Package)"
+          sudo apt-get install -y "$package_path"
+          executable="$(dpkg -L "$package_name" | \
+            awk '/\/WebPDF$/ { print; exit }')"
+          test -n "$executable"
+          sandbox="$(dirname "$executable")/chrome-sandbox"
+          test "$(stat -c '%U:%G %a' "$sandbox")" = "root:root 4755"
+          output_directory="$RUNNER_TEMP/webpdf-ubuntu-22-self-test"
+          mkdir -p "$output_directory"
+          xvfb-run -a "$executable" \
+            "--self-test-output=$output_directory"
+          node scripts/verify-self-test.mjs \
+            "--self-test-output=$output_directory"
+          sudo apt-get purge -y "$package_name"
+
   release:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v3.')
-    needs: build
-    runs-on: ubuntu-latest
+    needs:
+      - build
+      - linux-ubuntu-22
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - name: Download packages
         uses: actions/download-artifact@v8
         with:
           path: release-assets
 
-      - name: Prepare uniquely named release files
+      - name: Prepare uniquely named release files and checksums
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir release-files
           cp release-assets/webpdf-windows-x64/squirrel.windows/x64/*-Setup.exe \
             release-files/WebPDF-Studio-Windows-x64-Setup.exe
@@ -124,6 +469,15 @@ jobs:
           cp release-assets/webpdf-linux-x64/zip/linux/x64/*.zip \
             release-files/WebPDF-Studio-Linux-x64.zip
 
+          asset_count="$(find release-files \
+            -maxdepth 1 -type f | wc -l | tr -d ' ')"
+          test "$asset_count" = "8"
+          (
+            cd release-files
+            sha256sum WebPDF-Studio-* > SHA256SUMS.txt
+            test "$(wc -l < SHA256SUMS.txt | tr -d ' ')" = "8"
+          )
+
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -131,4 +485,5 @@ jobs:
           gh release create "$GITHUB_REF_NAME" release-files/* \
             --repo "$GITHUB_REPOSITORY" \
             --title "WebPDF Studio $GITHUB_REF_NAME" \
+            --notes "All platform packages passed packaged-app PDF and UI self-tests. macOS artifacts are ad-hoc signed but are not Apple-notarized; see the README for the verified first-launch procedure." \
             --generate-notes

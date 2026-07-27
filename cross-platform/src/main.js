@@ -7,6 +7,7 @@ const {
   protocol,
   session
 } = require("electron");
+const fsSync = require("node:fs");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const os = require("node:os");
@@ -19,6 +20,7 @@ if (require("electron-squirrel-startup")) {
 const APP_ORIGIN = "app://bundle";
 const RENDERER_ROOT = path.join(__dirname, "renderer");
 const PREFERENCES_FILE = "preferences.json";
+const PRINT_PAGE_NAME = "webpdf-settings";
 const MAX_HTML_SOURCE_LENGTH = 12 * 1024 * 1024;
 const LOAD_TIMEOUT_MS = 30_000;
 const DEFAULT_PREFERENCES = Object.freeze({
@@ -26,6 +28,41 @@ const DEFAULT_PREFERENCES = Object.freeze({
   theme: "light",
   accent: "#2563eb"
 });
+const MAIN_TRANSLATIONS = Object.freeze({
+  tr: {
+    selectHtmlTitle: "HTML dosyası seç",
+    savePdfTitle: "PDF'yi kaydet",
+    htmlFilter: "HTML dosyaları",
+    allFilesFilter: "Tüm dosyalar",
+    pdfFilter: "PDF belgesi",
+    invalidHtmlFile: "Lütfen bir HTML dosyası seçin.",
+    pathIsNotFile: "Seçilen HTML yolu bir dosya değil.",
+    emptyHtmlCode: "HTML kodu boş olamaz.",
+    defaultPdfName: "WebPDF-belgesi.pdf"
+  },
+  en: {
+    selectHtmlTitle: "Select an HTML file",
+    savePdfTitle: "Save PDF",
+    htmlFilter: "HTML files",
+    allFilesFilter: "All files",
+    pdfFilter: "PDF document",
+    invalidHtmlFile: "Please select an HTML file.",
+    pathIsNotFile: "The selected HTML path is not a file.",
+    emptyHtmlCode: "HTML code cannot be empty.",
+    defaultPdfName: "WebPDF-document.pdf"
+  }
+});
+const SELF_TEST_REQUESTED = process.argv.includes("--smoke-test")
+  || Boolean(getCommandLineValue("self-test-output"));
+
+if (SELF_TEST_REQUESTED) {
+  const testProfilePath = path.join(
+    os.tmpdir(),
+    `webpdf-studio-self-test-profile-${process.pid}`
+  );
+  fsSync.mkdirSync(testProfilePath, { recursive: true });
+  app.setPath("userData", testProfilePath);
+}
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -45,6 +82,7 @@ let activeRenderWindow;
 let activeOperationId = 0;
 let cachedPdf = null;
 let cachedRequestKey = "";
+let isSelfTestRunning = false;
 
 function isTrustedSender(event) {
   return Boolean(
@@ -145,14 +183,24 @@ function clampNumber(value, minimum, maximum, fallback) {
     : fallback;
 }
 
+function normalizeLanguage(value) {
+  return value === "en" ? "en" : "tr";
+}
+
+function mainText(language, key) {
+  return MAIN_TRANSLATIONS[normalizeLanguage(language)][key];
+}
+
 async function normalizePdfRequest(rawRequest) {
   if (!rawRequest || typeof rawRequest !== "object") {
     throw new Error("Invalid PDF request.");
   }
 
   const mode = rawRequest.mode === "file" ? "file" : "code";
+  const language = normalizeLanguage(rawRequest.language);
   const normalized = {
     mode,
+    language,
     filePath: "",
     htmlSource: "",
     pageSize: rawRequest.pageSize === "Letter" ? "Letter" : "A4",
@@ -172,12 +220,12 @@ async function normalizePdfRequest(rawRequest) {
     const filePath = path.resolve(cleanString(rawRequest.filePath, 32_768));
     const extension = path.extname(filePath).toLowerCase();
     if (![".html", ".htm"].includes(extension)) {
-      throw new Error("Please select an HTML file.");
+      throw new Error(mainText(language, "invalidHtmlFile"));
     }
 
     const fileStat = await fs.stat(filePath);
     if (!fileStat.isFile()) {
-      throw new Error("The selected HTML path is not a file.");
+      throw new Error(mainText(language, "pathIsNotFile"));
     }
 
     normalized.filePath = filePath;
@@ -191,15 +239,11 @@ async function normalizePdfRequest(rawRequest) {
       MAX_HTML_SOURCE_LENGTH
     );
     if (!normalized.htmlSource.trim()) {
-      throw new Error("HTML code cannot be empty.");
+      throw new Error(mainText(language, "emptyHtmlCode"));
     }
   }
 
   return normalized;
-}
-
-function millimetresToInches(value) {
-  return value / 25.4;
 }
 
 function createPrintOptions(request) {
@@ -220,17 +264,56 @@ function createPrintOptions(request) {
     scale: request.scale,
     pageSize: request.pageSize,
     margins: {
-      top: millimetresToInches(request.margins.top),
-      right: millimetresToInches(request.margins.right),
-      bottom: millimetresToInches(request.margins.bottom),
-      left: millimetresToInches(request.margins.left)
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
     },
     headerTemplate,
     footerTemplate,
-    preferCSSPageSize: false,
+    preferCSSPageSize: true,
     generateTaggedPDF: true,
     generateDocumentOutline: true
   };
+}
+
+function createPrintPageCss(request) {
+  const orientation = request.landscape ? "landscape" : "portrait";
+  const marginValue = [
+    request.margins.top,
+    request.margins.right,
+    request.margins.bottom,
+    request.margins.left
+  ].map((value) => `${value}mm`).join(" ");
+  const descriptors = [
+    `size: ${request.pageSize} ${orientation} !important`,
+    `margin: ${marginValue} !important`
+  ].join("; ");
+
+  return [
+    `html, body, body * { page: ${PRINT_PAGE_NAME} !important; }`,
+    `@page ${PRINT_PAGE_NAME} { ${descriptors}; }`,
+    `@page ${PRINT_PAGE_NAME}:first { margin: ${marginValue} !important; }`,
+    `@page ${PRINT_PAGE_NAME}:left { margin: ${marginValue} !important; }`,
+    `@page ${PRINT_PAGE_NAME}:right { margin: ${marginValue} !important; }`,
+    `@page ${PRINT_PAGE_NAME}:blank { margin: ${marginValue} !important; }`
+  ].join("\n");
+}
+
+async function installPrintPageCss(renderWindow, request) {
+  const contentsDebugger = renderWindow.webContents.debugger;
+  contentsDebugger.attach("1.3");
+  await contentsDebugger.sendCommand("DOM.enable");
+  await contentsDebugger.sendCommand("CSS.enable");
+  const frameTree = await contentsDebugger.sendCommand("Page.getFrameTree");
+  const styleSheet = await contentsDebugger.sendCommand(
+    "CSS.createStyleSheet",
+    { frameId: frameTree.frameTree.frame.id }
+  );
+  await contentsDebugger.sendCommand("CSS.setStyleSheetText", {
+    styleSheetId: styleSheet.styleSheetId,
+    text: createPrintPageCss(request)
+  });
 }
 
 function waitForDocumentReady(renderWindow, operationId) {
@@ -272,9 +355,9 @@ function waitForDocumentReady(renderWindow, operationId) {
   });
 }
 
-async function renderPdf(request) {
+async function renderPdf(request, options = {}) {
   const requestKey = JSON.stringify(request);
-  if (cachedPdf && cachedRequestKey === requestKey) {
+  if (!options.force && cachedPdf && cachedRequestKey === requestKey) {
     return cachedPdf;
   }
 
@@ -308,6 +391,7 @@ async function renderPdf(request) {
     }
 
     await waitForDocumentReady(renderWindow, operationId);
+    await installPrintPageCss(renderWindow, request);
     const pdfBuffer = await renderWindow.webContents.printToPDF(
       createPrintOptions(request)
     );
@@ -323,6 +407,12 @@ async function renderPdf(request) {
     cachedRequestKey = requestKey;
     return pdfBuffer;
   } finally {
+    if (
+      !renderWindow.isDestroyed()
+      && renderWindow.webContents.debugger.isAttached()
+    ) {
+      renderWindow.webContents.debugger.detach();
+    }
     if (!renderWindow.isDestroyed()) {
       renderWindow.destroy();
     }
@@ -367,14 +457,34 @@ async function savePreferences(rawPreferences) {
   return preferences;
 }
 
+async function writePdfSafely(finalPath, pdfBuffer) {
+  const temporaryPath = path.join(
+    path.dirname(finalPath),
+    `.${path.basename(finalPath)}.${process.pid}.${Date.now()}.tmp`
+  );
+
+  try {
+    await fs.writeFile(temporaryPath, pdfBuffer, { flag: "wx" });
+    await fs.rm(finalPath, { force: true });
+    await fs.rename(temporaryPath, finalPath);
+  } catch (error) {
+    await fs.rm(temporaryPath, { force: true }).catch(() => {});
+    throw error;
+  }
+}
+
 function registerIpcHandlers() {
-  registerTrustedHandler("source:select-file", async () => {
+  registerTrustedHandler("source:select-file", async (_event, rawLanguage) => {
+    const language = normalizeLanguage(rawLanguage);
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: "Select HTML file",
+      title: mainText(language, "selectHtmlTitle"),
       properties: ["openFile"],
       filters: [
-        { name: "HTML", extensions: ["html", "htm"] },
-        { name: "All files", extensions: ["*"] }
+        {
+          name: mainText(language, "htmlFilter"),
+          extensions: ["html", "htm"]
+        },
+        { name: mainText(language, "allFilesFilter"), extensions: ["*"] }
       ]
     });
 
@@ -391,7 +501,7 @@ function registerIpcHandlers() {
 
   registerTrustedHandler("pdf:preview", async (_event, rawRequest) => {
     const request = await normalizePdfRequest(rawRequest);
-    const pdfBuffer = await renderPdf(request);
+    const pdfBuffer = await renderPdf(request, { force: true });
     return {
       bytes: pdfBuffer,
       size: pdfBuffer.length
@@ -400,14 +510,19 @@ function registerIpcHandlers() {
 
   registerTrustedHandler("pdf:save", async (_event, rawRequest) => {
     const request = await normalizePdfRequest(rawRequest);
-    const pdfBuffer = await renderPdf(request);
+    const pdfBuffer = await renderPdf(request, {
+      force: request.mode === "file"
+    });
     const suggestedName = request.mode === "file"
       ? `${path.parse(request.filePath).name}.pdf`
-      : "WebPDF-document.pdf";
+      : mainText(request.language, "defaultPdfName");
     const result = await dialog.showSaveDialog(mainWindow, {
-      title: "Save PDF",
+      title: mainText(request.language, "savePdfTitle"),
       defaultPath: path.join(app.getPath("documents"), suggestedName),
-      filters: [{ name: "PDF document", extensions: ["pdf"] }]
+      filters: [{
+        name: mainText(request.language, "pdfFilter"),
+        extensions: ["pdf"]
+      }]
     });
 
     if (result.canceled || !result.filePath) {
@@ -417,24 +532,13 @@ function registerIpcHandlers() {
     const finalPath = result.filePath.toLowerCase().endsWith(".pdf")
       ? result.filePath
       : `${result.filePath}.pdf`;
-    const temporaryPath = path.join(
-      path.dirname(finalPath),
-      `.${path.basename(finalPath)}.${process.pid}.${Date.now()}.tmp`
-    );
-
-    try {
-      await fs.writeFile(temporaryPath, pdfBuffer, { flag: "wx" });
-      await fs.rm(finalPath, { force: true });
-      await fs.rename(temporaryPath, finalPath);
-    } catch (error) {
-      await fs.rm(temporaryPath, { force: true }).catch(() => {});
-      throw error;
-    }
+    await writePdfSafely(finalPath, pdfBuffer);
 
     return {
       canceled: false,
       filePath: finalPath,
-      size: pdfBuffer.length
+      size: pdfBuffer.length,
+      bytes: pdfBuffer
     };
   });
 
@@ -459,40 +563,390 @@ function registerIpcHandlers() {
   }));
 }
 
-async function runSmokeTest() {
-  const samplePath = path.resolve(
-    app.getAppPath(),
-    "..",
-    "samples",
-    "quality-test",
-    "quality-test.html"
-  );
-  const outputPath = path.join(os.tmpdir(), "webpdf-studio-smoke.pdf");
-  const request = await normalizePdfRequest({
-    mode: "file",
-    filePath: samplePath,
+function createTestRequest(htmlSource, overrides = {}) {
+  return {
+    mode: "code",
+    htmlSource,
     pageSize: "A4",
     landscape: false,
     printBackground: true,
     displayHeaderFooter: false,
     scale: 1,
-    margins: { top: 12, right: 12, bottom: 12, left: 12 }
-  });
-  const buffer = await renderPdf(request);
+    margins: { top: 12, right: 12, bottom: 12, left: 12 },
+    ...overrides
+  };
+}
+
+async function writeSelfTestPdf(outputDirectory, fileName, rawRequest) {
+  const request = await normalizePdfRequest(rawRequest);
+  const buffer = await renderPdf(request, { force: true });
+  const outputPath = path.join(outputDirectory, fileName);
   await fs.writeFile(outputPath, buffer);
-  console.log(`SMOKE_TEST_PASS ${outputPath} ${buffer.length}`);
+  return { buffer, outputPath };
+}
+
+async function readUiSelfTestSnapshot(window) {
+  return window.webContents.executeJavaScript(`
+    (() => ({
+      status: document.querySelector("#statusText")?.textContent ?? "",
+      language: document.querySelector("#languageSelect")?.value ?? "",
+      subtitle: document.querySelector("[data-i18n='brandSubtitle']")
+        ?.textContent ?? "",
+      theme: document.documentElement.dataset.theme ?? "",
+      accent: getComputedStyle(document.documentElement)
+        .getPropertyValue("--accent").trim(),
+      marginTop: document.querySelector("#marginTop")?.value ?? "",
+      pageLabel: document.querySelector(".page-label")?.textContent ?? "",
+      pdfSize: document.querySelector("#pdfSize")?.textContent ?? "",
+      canvasCount: document.querySelectorAll(".pdf-page canvas").length,
+      pdfPagesHidden: document.querySelector("#pdfPages")
+        ?.classList.contains("hidden") ?? true,
+      loadingHidden: document.querySelector("#loadingState")
+        ?.classList.contains("hidden") ?? false
+    }))();
+  `, true);
+}
+
+async function waitForUiSelfTest(window, predicate, description) {
+  const deadline = Date.now() + 20_000;
+  let snapshot = {};
+
+  while (Date.now() < deadline) {
+    if (window.isDestroyed()) {
+      throw new Error(`UI self-test window closed while waiting for ${description}.`);
+    }
+    snapshot = await readUiSelfTestSnapshot(window);
+    if (predicate(snapshot)) {
+      return snapshot;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  throw new Error(
+    `UI self-test timed out waiting for ${description}: `
+    + JSON.stringify(snapshot)
+  );
+}
+
+async function waitForSelfTestPreferences(expected) {
+  const deadline = Date.now() + 10_000;
+  let preferences = {};
+
+  while (Date.now() < deadline) {
+    preferences = await loadPreferences();
+    if (
+      preferences.language === expected.language
+      && preferences.theme === expected.theme
+      && preferences.accent === expected.accent
+    ) {
+      return preferences;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  throw new Error(
+    `UI preferences were not saved before timeout: ${JSON.stringify(preferences)}`
+  );
+}
+
+async function runUiSelfTest() {
+  mainWindow = await createMainWindow(false, "?preview=1");
+  const initial = await waitForUiSelfTest(
+    mainWindow,
+    (snapshot) => (
+      snapshot.status === "Gerçek PDF önizlemesi hazır."
+      && snapshot.canvasCount > 0
+    ),
+    "the initial PDF preview"
+  );
+  const dirtyStatus = await mainWindow.webContents.executeJavaScript(`
+    (() => {
+      const language = document.querySelector("#languageSelect");
+      language.value = "en";
+      language.dispatchEvent(new Event("change", { bubbles: true }));
+      document.querySelector("#themeButton").click();
+      const accent = document.querySelector("#accentPicker");
+      accent.value = "#db2777";
+      accent.dispatchEvent(new Event("input", { bubbles: true }));
+      accent.dispatchEvent(new Event("change", { bubbles: true }));
+      const marginTop = document.querySelector("#marginTop");
+      marginTop.value = "25";
+      marginTop.dispatchEvent(new Event("input", { bubbles: true }));
+      marginTop.dispatchEvent(new Event("change", { bubbles: true }));
+      return document.querySelector("#statusText").textContent;
+    })();
+  `, true);
+  if (dirtyStatus !== "Settings changed; updating the preview…") {
+    throw new Error(`UI did not mark the preview outdated: ${dirtyStatus}`);
+  }
+
+  const updated = await waitForUiSelfTest(
+    mainWindow,
+    (snapshot) => (
+      snapshot.status === "Actual PDF preview is ready."
+      && snapshot.language === "en"
+      && snapshot.subtitle === "Professional HTML → PDF"
+      && snapshot.theme === "dark"
+      && snapshot.accent === "#db2777"
+      && snapshot.marginTop === "25"
+      && snapshot.pageLabel.startsWith("Page ")
+      && snapshot.canvasCount > 0
+    ),
+    "the automatic preview refresh and appearance changes"
+  );
+  await waitForSelfTestPreferences({
+    language: "en",
+    theme: "dark",
+    accent: "#db2777"
+  });
+  await mainWindow.webContents.executeJavaScript(`
+    (() => {
+      const editor = document.querySelector("#htmlEditor");
+      editor.value = "";
+      editor.dispatchEvent(new Event("input", { bubbles: true }));
+    })();
+  `, true);
+  const invalidSource = await waitForUiSelfTest(
+    mainWindow,
+    (snapshot) => (
+      snapshot.status === (
+        "The operation could not be completed: HTML code cannot be empty."
+      )
+      && snapshot.canvasCount > 0
+      && snapshot.pdfPagesHidden === false
+      && snapshot.loadingHidden === true
+    ),
+    "stable invalid-source feedback with the previous preview still visible"
+  );
+  mainWindow.destroy();
+  mainWindow = null;
+
+  mainWindow = await createMainWindow(false);
+  const restored = await waitForUiSelfTest(
+    mainWindow,
+    (snapshot) => (
+      snapshot.language === "en"
+      && snapshot.subtitle === "Professional HTML → PDF"
+      && snapshot.theme === "dark"
+      && snapshot.accent === "#db2777"
+    ),
+    "persisted language, theme and accent preferences"
+  );
+  mainWindow.destroy();
+  mainWindow = null;
+
+  return {
+    passed: true,
+    dirtyStatus,
+    initialPdfSize: initial.pdfSize,
+    updatedPdfSize: updated.pdfSize,
+    invalidSourceHandled: invalidSource.loadingHidden,
+    preferencesRestored: (
+      restored.language === "en"
+      && restored.theme === "dark"
+      && restored.accent === "#db2777"
+    )
+  };
+}
+
+async function runSelfTest(outputDirectory) {
+  const resolvedOutput = path.resolve(outputDirectory);
+  await fs.mkdir(resolvedOutput, { recursive: true });
+
+  const markerHtml = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    @page invoice { size: Letter landscape; margin: 0; }
+    html, body { width: 100%; height: 100%; margin: 0; page: invoice; }
+    body { font: 12px Arial, sans-serif; }
+    .marker { position: fixed; line-height: 12px; }
+    .tl { top: 0; left: 0; }
+    .tr { top: 0; right: 0; }
+    .bl { bottom: 0; left: 0; }
+    .br { right: 0; bottom: 0; }
+  </style>
+</head>
+<body>
+  <span class="marker tl">TOPLEFT</span>
+  <span class="marker tr">TOPRIGHT</span>
+  <span class="marker bl">BOTTOMLEFT</span>
+  <span class="marker br">BOTTOMRIGHT</span>
+</body>
+</html>`;
+  const scaleHtml = `<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  html, body { margin: 0; }
+  body { font: 20px Arial, sans-serif; }
+</style></head><body>SCALEMARKER</body></html>`;
+  const backgroundHtml = `<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  html, body { margin: 0; }
+  #background-box {
+    width: 240px;
+    height: 80px;
+    color: white;
+    background: #e11d48;
+  }
+</style></head><body>
+  <div id="background-box">BACKGROUNDMARKER</div>
+</body></html>`;
+  const headerHtml = `<!doctype html>
+<html><head><meta charset="utf-8"><title>WEBPDFSELFTEST</title>
+<style>html, body { margin: 0; }</style></head>
+<body>HEADERBODY</body></html>`;
+
+  const generatedFiles = [];
+  const writePdf = async (fileName, request) => {
+    const result = await writeSelfTestPdf(resolvedOutput, fileName, request);
+    generatedFiles.push(fileName);
+    return result.buffer;
+  };
+
+  await writePdf(
+    "code-asymmetric.pdf",
+    createTestRequest(markerHtml, {
+      margins: { top: 10, right: 20, bottom: 30, left: 40 }
+    })
+  );
+  await writePdf(
+    "letter-landscape.pdf",
+    createTestRequest("<!doctype html><html><body>LETTERLANDSCAPE</body></html>", {
+      pageSize: "Letter",
+      landscape: true
+    })
+  );
+  await writePdf(
+    "scale-100.pdf",
+    createTestRequest(scaleHtml, { scale: 1 })
+  );
+  await writePdf(
+    "scale-150.pdf",
+    createTestRequest(scaleHtml, { scale: 1.5 })
+  );
+  await writePdf(
+    "background-on.pdf",
+    createTestRequest(backgroundHtml, { printBackground: true })
+  );
+  await writePdf(
+    "background-off.pdf",
+    createTestRequest(backgroundHtml, { printBackground: false })
+  );
+  await writePdf(
+    "header-footer.pdf",
+    createTestRequest(headerHtml, {
+      displayHeaderFooter: true,
+      margins: { top: 18, right: 12, bottom: 18, left: 12 }
+    })
+  );
+
+  const fixtureDirectory = await fs.mkdtemp(
+    path.join(os.tmpdir(), "webpdf-studio-fixture-")
+  );
+  try {
+    const fixtureHtmlPath = path.join(fixtureDirectory, "relative fixture.html");
+    await fs.writeFile(
+      path.join(fixtureDirectory, "relative.css"),
+      [
+        "html, body { margin: 0; }",
+        ".relative-marker { margin-left: 80px; font: 16px Arial, sans-serif; }",
+        "img { width: 24px; height: 24px; }"
+      ].join("\n"),
+      "utf8"
+    );
+    await fs.writeFile(
+      path.join(fixtureDirectory, "marker.svg"),
+      [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">',
+        '<rect width="24" height="24" fill="#2563eb"/>',
+        "</svg>"
+      ].join(""),
+      "utf8"
+    );
+    await fs.writeFile(
+      fixtureHtmlPath,
+      [
+        "<!doctype html><html><head><meta charset=\"utf-8\">",
+        "<link rel=\"stylesheet\" href=\"relative.css\"></head><body>",
+        "<div class=\"relative-marker\">RELATIVECSS</div>",
+        "<img src=\"marker.svg\" alt=\"relative svg\">",
+        "</body></html>"
+      ].join(""),
+      "utf8"
+    );
+    await writePdf("file-relative-assets.pdf", {
+      mode: "file",
+      filePath: fixtureHtmlPath,
+      pageSize: "A4",
+      landscape: false,
+      printBackground: true,
+      displayHeaderFooter: false,
+      scale: 1,
+      margins: { top: 12, right: 12, bottom: 12, left: 12 }
+    });
+  } finally {
+    await fs.rm(fixtureDirectory, { recursive: true, force: true });
+  }
+
+  const cacheRequest = await normalizePdfRequest(
+    createTestRequest(
+      "<!doctype html><html><body>CACHEMARKER</body></html>"
+    )
+  );
+  const firstCachedBuffer = await renderPdf(cacheRequest, { force: true });
+  const secondCachedBuffer = await renderPdf(cacheRequest);
+  const saveFlowPath = path.join(resolvedOutput, "save-flow.pdf");
+  await fs.writeFile(saveFlowPath, "stale file that must be replaced", "utf8");
+  await writePdfSafely(saveFlowPath, firstCachedBuffer);
+  const savedBuffer = await fs.readFile(saveFlowPath);
+  generatedFiles.push("save-flow.pdf");
+  const ui = await runUiSelfTest();
+  const manifest = {
+    platform: process.platform,
+    arch: process.arch,
+    version: app.getVersion(),
+    cacheEqual: firstCachedBuffer.equals(secondCachedBuffer),
+    saveFlow: {
+      exactBytes: firstCachedBuffer.equals(savedBuffer),
+      size: savedBuffer.length
+    },
+    ui,
+    generatedFiles
+  };
+  const manifestPath = path.join(resolvedOutput, "self-test.json");
+  await fs.writeFile(
+    manifestPath,
+    `${JSON.stringify(manifest, null, 2)}\n`,
+    "utf8"
+  );
+  console.log(`SELF_TEST_PASS ${manifestPath}`);
+  return manifest;
+}
+
+function getCommandLineValue(name) {
+  const prefix = `--${name}=`;
+  const argument = process.argv.find((value) => value.startsWith(prefix));
+  return argument ? argument.slice(prefix.length) : "";
 }
 
 app.whenReady().then(async () => {
   await registerApplicationProtocol();
 
-  if (process.argv.includes("--smoke-test")) {
+  const selfTestOutput = getCommandLineValue("self-test-output");
+  if (process.argv.includes("--smoke-test") || selfTestOutput) {
+    isSelfTestRunning = true;
+    registerIpcHandlers();
     try {
-      await runSmokeTest();
+      const outputDirectory = selfTestOutput
+        || path.join(os.tmpdir(), "webpdf-studio-self-test");
+      await runSelfTest(outputDirectory);
       app.exit(0);
     } catch (error) {
-      console.error("SMOKE_TEST_FAIL", error);
+      console.error("SELF_TEST_FAIL", error);
       app.exit(1);
+    } finally {
+      isSelfTestRunning = false;
     }
     return;
   }
@@ -528,7 +982,7 @@ app.whenReady().then(async () => {
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
+  if (!isSelfTestRunning && process.platform !== "darwin") {
     app.quit();
   }
 });
