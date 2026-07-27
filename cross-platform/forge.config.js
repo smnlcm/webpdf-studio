@@ -3,6 +3,9 @@ const {
   FuseVersion
 } = require("@electron/fuses");
 const { FusesPlugin } = require("@electron-forge/plugin-fuses");
+const { execFileSync } = require("node:child_process");
+const fs = require("node:fs");
+const path = require("node:path");
 
 module.exports = {
   packagerConfig: {
@@ -10,6 +13,7 @@ module.exports = {
     executableName: "WebPDF",
     appBundleId: "studio.webpdf.desktop",
     appCategoryType: "public.app-category.productivity",
+    ignore: [/^\/tmp(?:\/|$)/],
     win32metadata: {
       CompanyName: "WebPDF Studio",
       FileDescription: "WebPDF Studio",
@@ -59,6 +63,33 @@ module.exports = {
       platforms: ["win32", "darwin", "linux"]
     }
   ],
+  hooks: {
+    postPackage: async (_forgeConfig, packageResult) => {
+      if (packageResult.platform !== "darwin") {
+        return;
+      }
+
+      for (const outputPath of packageResult.outputPaths) {
+        const appPath = path.join(outputPath, "WebPDF Studio.app");
+        if (!fs.existsSync(appPath)) {
+          throw new Error(`Packaged macOS application not found: ${appPath}`);
+        }
+
+        // This is an ad-hoc signature for bundle integrity and native CI tests.
+        // It does not establish a developer identity and is not notarization.
+        execFileSync(
+          "codesign",
+          ["--force", "--deep", "--sign", "-", appPath],
+          { stdio: "inherit" }
+        );
+        execFileSync(
+          "codesign",
+          ["--verify", "--deep", "--strict", "--verbose=2", appPath],
+          { stdio: "inherit" }
+        );
+      }
+    }
+  },
   plugins: [
     new FusesPlugin({
       version: FuseVersion.V1,
@@ -68,8 +99,7 @@ module.exports = {
       [FuseV1Options.EnableNodeCliInspectArguments]: false,
       [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
-      [FuseV1Options.GrantFileProtocolExtraPrivileges]: false,
-      resetAdHocDarwinSignature: true
+      [FuseV1Options.GrantFileProtocolExtraPrivileges]: false
     })
   ]
 };

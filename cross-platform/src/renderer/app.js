@@ -50,6 +50,7 @@ const translations = {
     fileRequired: "Önce bir HTML dosyası seçin.",
     codeRequired: "HTML kodu boş olamaz.",
     previewReady: "Gerçek PDF önizlemesi hazır.",
+    previewOutdated: "Ayarlar değişti; önizleme güncelleniyor…",
     saved: "PDF kaydedildi:",
     canceled: "İşlem iptal edildi.",
     error: "İşlem tamamlanamadı:",
@@ -101,6 +102,7 @@ const translations = {
     fileRequired: "Select an HTML file first.",
     codeRequired: "HTML code cannot be empty.",
     previewReady: "Actual PDF preview is ready.",
+    previewOutdated: "Settings changed; updating the preview…",
     saved: "PDF saved:",
     canceled: "Operation cancelled.",
     error: "The operation could not be completed:",
@@ -215,8 +217,17 @@ const state = {
   language: "tr",
   theme: "light",
   accent: "#2563eb",
-  busy: false
+  busy: false,
+  previewAvailable: false,
+  previewDirty: false,
+  pendingPreview: false,
+  previewTimer: null,
+  pageCount: 0,
+  operationId: 0,
+  renderGeneration: 0,
+  activePdfJob: null
 };
+let preferenceSaveQueue = Promise.resolve();
 
 function t(key, replacements = {}) {
   let text = translations[state.language][key] ?? key;
@@ -258,17 +269,31 @@ function applyAppearance() {
     elements.fileCardTitle.textContent = t("selectedFile");
     elements.selectedFilePath.textContent = state.selectedFile.filePath;
   }
+
+  if (state.pageCount > 0) {
+    elements.pageCount.textContent = t("pages", { count: state.pageCount });
+    for (const [index, label] of [
+      ...elements.pdfPages.querySelectorAll(".page-label")
+    ].entries()) {
+      label.textContent = t("page", { number: index + 1 });
+    }
+  }
 }
 
-async function persistAppearance() {
-  await window.webPdf.savePreferences({
+function persistAppearance() {
+  const preferences = {
     language: state.language,
     theme: state.theme,
     accent: state.accent
-  });
+  };
+  preferenceSaveQueue = preferenceSaveQueue
+    .catch(() => {})
+    .then(() => window.webPdf.savePreferences(preferences));
+  return preferenceSaveQueue;
 }
 
 function setMode(mode) {
+  const changed = state.mode !== mode;
   state.mode = mode;
   for (const tab of elements.modeTabs) {
     const active = tab.dataset.mode === mode;
@@ -277,6 +302,9 @@ function setMode(mode) {
   }
   elements.filePane.classList.toggle("active", mode === "file");
   elements.codePane.classList.toggle("active", mode === "code");
+  if (changed) {
+    markPreviewDirty();
+  }
 }
 
 function setStatus(message, type = "ready") {
@@ -297,6 +325,8 @@ function setBusy(busy) {
     setStatus(t("rendering"), "busy");
   } else {
     elements.loadingState.classList.add("hidden");
+    elements.emptyState.classList.toggle("hidden", state.previewAvailable);
+    elements.pdfPages.classList.toggle("hidden", !state.previewAvailable);
   }
 }
 
@@ -310,6 +340,7 @@ function buildRequest() {
 
   return {
     mode: state.mode,
+    language: state.language,
     filePath: state.selectedFile?.filePath ?? "",
     htmlSource: elements.htmlEditor.value,
     pageSize: elements.pageSize.value,
@@ -332,90 +363,301 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-async function renderPdfPages(rawBytes) {
+function getCurrentRequestKey() {
+  try {
+    return JSON.stringify(buildRequest());
+  } catch {
+    return "";
+  }
+}
+
+function clearScheduledPreview() {
+  if (!state.previewTimer) {
+    return;
+  }
+  clearTimeout(state.previewTimer);
+  state.previewTimer = null;
+}
+
+function isCancellationError(error) {
+  const name = String(error?.name ?? "");
+  const message = String(error?.message ?? "").toLowerCase();
+  return name === "RenderingCancelledException" || message.includes("cancel");
+}
+
+function destroyPdfJob(job) {
+  if (!job) {
+    return Promise.resolve();
+  }
+
+  if (job.renderTask) {
+    try {
+      job.renderTask.cancel();
+    } catch {
+      // The render may already have completed.
+    }
+  }
+
+  if (!job.destroyPromise) {
+    job.destroyPromise = Promise.resolve().then(() => job.loadingTask.destroy());
+  }
+  return job.destroyPromise;
+}
+
+function invalidatePdfRendering() {
+  state.renderGeneration += 1;
+  if (state.activePdfJob) {
+    void destroyPdfJob(state.activePdfJob).catch(() => {});
+  }
+}
+
+function schedulePreviewRefresh(delay = 450) {
+  clearScheduledPreview();
+  state.previewTimer = setTimeout(() => {
+    state.previewTimer = null;
+    if (state.busy) {
+      state.pendingPreview = true;
+      return;
+    }
+    void previewPdf({ automatic: true });
+  }, delay);
+}
+
+function markPreviewDirty() {
+  invalidatePdfRendering();
+  if (state.busy) {
+    state.pendingPreview = true;
+  }
+  if (!state.previewAvailable) {
+    return;
+  }
+  state.previewDirty = true;
+  setStatus(t("previewOutdated"), "busy");
+  schedulePreviewRefresh();
+}
+
+async function renderPdfPages(rawBytes, renderGeneration) {
   const bytes = rawBytes instanceof Uint8Array
     ? rawBytes
     : new Uint8Array(rawBytes);
-  const documentTask = pdfjsLib.getDocument({ data: bytes });
-  const pdfDocument = await documentTask.promise;
-  elements.pdfPages.replaceChildren();
-
-  const availableWidth = Math.max(
-    320,
-    elements.previewViewport.clientWidth - 72
-  );
-
-  for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) {
-    const pdfPage = await pdfDocument.getPage(pageNumber);
-    const baseViewport = pdfPage.getViewport({ scale: 1 });
-    const cssScale = Math.min(1.35, availableWidth / baseViewport.width);
-    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
-    const renderViewport = pdfPage.getViewport({
-      scale: cssScale * outputScale
-    });
-    const pageContainer = document.createElement("article");
-    const canvas = document.createElement("canvas");
-    const label = document.createElement("span");
-    const context = canvas.getContext("2d", { alpha: false });
-
-    pageContainer.className = "pdf-page";
-    label.className = "page-label";
-    label.textContent = t("page", { number: pageNumber });
-    canvas.width = Math.floor(renderViewport.width);
-    canvas.height = Math.floor(renderViewport.height);
-    canvas.style.width = `${Math.floor(renderViewport.width / outputScale)}px`;
-    canvas.style.height = `${Math.floor(renderViewport.height / outputScale)}px`;
-    pageContainer.append(canvas, label);
-    elements.pdfPages.append(pageContainer);
-
-    await pdfPage.render({
-      canvasContext: context,
-      viewport: renderViewport,
-      background: "#ffffff"
-    }).promise;
+  const previousJob = state.activePdfJob;
+  if (previousJob) {
+    try {
+      await destroyPdfJob(previousJob);
+    } catch (error) {
+      if (
+        renderGeneration === state.renderGeneration &&
+        !isCancellationError(error)
+      ) {
+        throw error;
+      }
+    }
+  }
+  if (renderGeneration !== state.renderGeneration) {
+    return false;
   }
 
-  elements.pageCount.textContent = t("pages", {
-    count: pdfDocument.numPages
-  });
-  elements.emptyState.classList.add("hidden");
-  elements.pdfPages.classList.remove("hidden");
+  const job = {
+    loadingTask: pdfjsLib.getDocument({ data: bytes }),
+    renderTask: null,
+    destroyPromise: null
+  };
+  state.activePdfJob = job;
+
+  try {
+    const pdfDocument = await job.loadingTask.promise;
+    if (renderGeneration !== state.renderGeneration) {
+      return false;
+    }
+
+    const availableWidth = Math.max(
+      320,
+      elements.previewViewport.clientWidth - 72
+    );
+    const pageFragment = document.createDocumentFragment();
+    const pageLabels = [];
+
+    for (
+      let pageNumber = 1;
+      pageNumber <= pdfDocument.numPages;
+      pageNumber += 1
+    ) {
+      if (renderGeneration !== state.renderGeneration) {
+        return false;
+      }
+
+      const pdfPage = await pdfDocument.getPage(pageNumber);
+      if (renderGeneration !== state.renderGeneration) {
+        return false;
+      }
+
+      const baseViewport = pdfPage.getViewport({ scale: 1 });
+      const cssScale = Math.min(1.35, availableWidth / baseViewport.width);
+      const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+      const renderViewport = pdfPage.getViewport({
+        scale: cssScale * outputScale
+      });
+      const pageContainer = document.createElement("article");
+      const canvas = document.createElement("canvas");
+      const label = document.createElement("span");
+      const context = canvas.getContext("2d", { alpha: false });
+
+      pageContainer.className = "pdf-page";
+      label.className = "page-label";
+      canvas.width = Math.floor(renderViewport.width);
+      canvas.height = Math.floor(renderViewport.height);
+      canvas.style.width = `${Math.floor(renderViewport.width / outputScale)}px`;
+      canvas.style.height = `${Math.floor(renderViewport.height / outputScale)}px`;
+      pageContainer.append(canvas, label);
+      pageFragment.append(pageContainer);
+      pageLabels.push(label);
+
+      job.renderTask = pdfPage.render({
+        canvasContext: context,
+        viewport: renderViewport,
+        background: "#ffffff"
+      });
+      await job.renderTask.promise;
+      job.renderTask = null;
+    }
+
+    if (renderGeneration !== state.renderGeneration) {
+      return false;
+    }
+
+    for (const [index, label] of pageLabels.entries()) {
+      label.textContent = t("page", { number: index + 1 });
+    }
+    elements.pdfPages.replaceChildren(pageFragment);
+    elements.pageCount.textContent = t("pages", {
+      count: pdfDocument.numPages
+    });
+    state.pageCount = pdfDocument.numPages;
+    elements.emptyState.classList.add("hidden");
+    elements.pdfPages.classList.remove("hidden");
+    return true;
+  } catch (error) {
+    if (
+      renderGeneration !== state.renderGeneration ||
+      isCancellationError(error)
+    ) {
+      return false;
+    }
+    throw error;
+  } finally {
+    await destroyPdfJob(job);
+    if (state.activePdfJob === job) {
+      state.activePdfJob = null;
+    }
+  }
 }
 
-async function previewPdf() {
+async function previewPdf({ automatic = false } = {}) {
+  if (state.busy) {
+    state.pendingPreview = true;
+    return;
+  }
+
+  let request;
   try {
-    const request = buildRequest();
+    request = buildRequest();
+  } catch (error) {
+    state.pendingPreview = false;
+    state.previewDirty = state.previewAvailable;
+    clearScheduledPreview();
+    setStatus(`${t("error")} ${error.message}`, "error");
+    return;
+  }
+
+  const requestKey = JSON.stringify(request);
+  const operationId = ++state.operationId;
+  const renderGeneration = state.renderGeneration;
+  state.pendingPreview = false;
+  try {
     setBusy(true);
     const result = await window.webPdf.generatePreview(request);
-    await renderPdfPages(result.bytes);
+    if (operationId !== state.operationId) {
+      return;
+    }
+    if (getCurrentRequestKey() !== requestKey) {
+      state.pendingPreview = true;
+      return;
+    }
+    const rendered = await renderPdfPages(result.bytes, renderGeneration);
+    if (operationId !== state.operationId) {
+      return;
+    }
+    if (
+      !rendered ||
+      renderGeneration !== state.renderGeneration ||
+      getCurrentRequestKey() !== requestKey
+    ) {
+      state.pendingPreview = true;
+      return;
+    }
     elements.pdfSize.textContent = formatBytes(result.size);
+    state.previewAvailable = true;
+    state.previewDirty = false;
     setStatus(t("previewReady"));
   } catch (error) {
-    if (!String(error?.message).includes("cancel")) {
+    if (operationId === state.operationId && !isCancellationError(error)) {
       setStatus(`${t("error")} ${error.message}`, "error");
     }
   } finally {
-    setBusy(false);
+    if (operationId === state.operationId) {
+      setBusy(false);
+      if (state.pendingPreview) {
+        schedulePreviewRefresh(50);
+      }
+    }
   }
 }
 
 async function savePdf() {
+  let request;
+  let operationId;
+  let renderGeneration;
   try {
-    const request = buildRequest();
+    request = buildRequest();
+    operationId = ++state.operationId;
+    renderGeneration = state.renderGeneration;
     setBusy(true);
     const result = await window.webPdf.savePdf(request);
+    if (operationId !== state.operationId) {
+      return;
+    }
     if (result.canceled) {
       setStatus(t("canceled"));
       return;
     }
-    elements.pdfSize.textContent = formatBytes(result.size);
+    const rendered = await renderPdfPages(result.bytes, renderGeneration);
+    if (
+      rendered &&
+      operationId === state.operationId &&
+      renderGeneration === state.renderGeneration
+    ) {
+      elements.pdfSize.textContent = formatBytes(result.size);
+      state.previewAvailable = true;
+      state.previewDirty = false;
+    }
+    if (operationId !== state.operationId) {
+      return;
+    }
     setStatus(`${t("saved")} ${result.filePath}`);
   } catch (error) {
-    if (!String(error?.message).includes("cancel")) {
+    if (
+      (!operationId || operationId === state.operationId) &&
+      !isCancellationError(error)
+    ) {
       setStatus(`${t("error")} ${error.message}`, "error");
     }
   } finally {
-    setBusy(false);
+    if (!operationId || operationId === state.operationId) {
+      setBusy(false);
+      if (state.pendingPreview) {
+        schedulePreviewRefresh(50);
+      }
+    }
   }
 }
 
@@ -429,7 +671,10 @@ function resetPdfSettings() {
   elements.marginLeft.value = "12";
   elements.printBackground.checked = true;
   elements.headerFooter.checked = false;
-  setStatus(t("settingsReset"));
+  markPreviewDirty();
+  if (!state.previewAvailable) {
+    setStatus(t("settingsReset"));
+  }
 }
 
 for (const tab of elements.modeTabs) {
@@ -437,16 +682,24 @@ for (const tab of elements.modeTabs) {
 }
 
 elements.selectFileButton.addEventListener("click", async () => {
-  const selectedFile = await window.webPdf.selectHtmlFile();
+  const selectedFile = await window.webPdf.selectHtmlFile(state.language);
   if (!selectedFile) return;
   state.selectedFile = selectedFile;
   applyAppearance();
   setStatus(selectedFile.filePath);
+  markPreviewDirty();
 });
 
 elements.languageSelect.addEventListener("change", async () => {
   state.language = elements.languageSelect.value;
   applyAppearance();
+  if (state.previewDirty) {
+    setStatus(t("previewOutdated"), "busy");
+  } else if (state.previewAvailable) {
+    setStatus(t("previewReady"));
+  } else {
+    setStatus(t("ready"));
+  }
   await persistAppearance();
 });
 
@@ -463,13 +716,37 @@ elements.themeButton.addEventListener("click", async () => {
   await persistAppearance();
 });
 
+const pdfSettingElements = [
+  elements.pageSize,
+  elements.orientation,
+  elements.scale,
+  elements.marginTop,
+  elements.marginRight,
+  elements.marginBottom,
+  elements.marginLeft,
+  elements.printBackground,
+  elements.headerFooter
+];
+for (const element of pdfSettingElements) {
+  element.addEventListener("input", markPreviewDirty);
+  element.addEventListener("change", markPreviewDirty);
+}
+elements.htmlEditor.addEventListener("input", markPreviewDirty);
+
 elements.resetSettingsButton.addEventListener("click", resetPdfSettings);
 elements.previewButton.addEventListener("click", previewPdf);
 elements.saveButton.addEventListener("click", savePdf);
 elements.cancelButton.addEventListener("click", async () => {
-  await window.webPdf.cancelOperation();
-  setBusy(false);
-  setStatus(t("canceled"));
+  state.operationId += 1;
+  state.pendingPreview = false;
+  clearScheduledPreview();
+  invalidatePdfRendering();
+  try {
+    await window.webPdf.cancelOperation();
+  } finally {
+    setBusy(false);
+    setStatus(t("canceled"));
+  }
 });
 
 async function initialize() {

@@ -1,7 +1,7 @@
 {
   "name": "webpdf-studio",
   "productName": "WebPDF Studio",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Professional cross-platform HTML to PDF desktop application",
   "author": "smnlcm",
   "license": "MIT",
@@ -10,7 +10,8 @@
     "postinstall": "node scripts/copy-pdfjs.mjs",
     "start": "electron-forge start",
     "check": "node scripts/check.mjs",
-    "smoke": "electron . --smoke-test",
+    "smoke": "node scripts/run-self-test.mjs",
+    "self-test": "node scripts/run-self-test.mjs",
     "capture-ui": "electron . --capture-ui",
     "capture-preview": "electron . --capture-preview",
     "package": "electron-forge package",
