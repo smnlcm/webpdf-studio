@@ -86,7 +86,7 @@ jobs:
 
       - name: Install Linux packaging and test tools
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y fakeroot unzip xvfb
+        run: sudo apt-get update && sudo apt-get install -y fakeroot unzip xvfb zip
 
       - name: Install dependencies
         run: npm ci
@@ -106,6 +106,32 @@ jobs:
 
       - name: Create packages
         run: npm run make -- --arch=${{ matrix.arch }}
+
+      - name: Normalize Linux ZIP runtime path
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$(realpath "$(find out/make/zip/linux/x64 \
+            -maxdepth 1 -type f -name '*.zip' -print -quit)")"
+          test -n "$archive"
+          work_directory="$RUNNER_TEMP/webpdf-linux-zip-normalize"
+          safe_root="$work_directory/WebPDF-Studio-linux-x64"
+          mkdir -p "$work_directory"
+          unzip -q "$archive" -d "$work_directory"
+          original_root="$(find "$work_directory" \
+            -mindepth 1 -maxdepth 1 -type d -print -quit)"
+          test -n "$original_root"
+          if [[ "$original_root" != "$safe_root" ]]; then
+            mv "$original_root" "$safe_root"
+          fi
+          rm "$archive"
+          (
+            cd "$work_directory"
+            zip -qr "$archive" WebPDF-Studio-linux-x64
+          )
+          unzip -Z1 "$archive" | \
+            grep -q '^WebPDF-Studio-linux-x64/WebPDF$'
 
       - name: Test unpacked Windows application
         if: runner.os == 'Windows'

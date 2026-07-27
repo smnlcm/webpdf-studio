@@ -19,8 +19,8 @@
   UI tests.
 - Run self-tests against packaged Windows, macOS Intel, macOS Apple Silicon,
   and Linux applications before publishing a release.
-- Stage the unpacked Linux application in a space-free runtime path before
-  exercising Chromium's sandbox; ZIP and DEB artifacts are tested separately.
+- Give the Linux ZIP a space-free root directory and test that exact archive;
+  DEB installation is verified separately.
 - Build macOS artifacts on matching native Intel and Apple Silicon runners and
   apply a verifiable ad-hoc signature when Developer ID credentials are not
   available.
