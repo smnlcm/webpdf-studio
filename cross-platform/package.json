@@ -12,8 +12,8 @@
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
-    "make": "electron-builder",
-    "build": "electron-builder",
+    "make": "electron-builder --publish never",
+    "build": "electron-builder --publish never",
     "build:win": "electron-builder --win --x64",
     "build:linux": "electron-builder --linux --x64",
     "build:all": "electron-builder --win --linux --x64"
