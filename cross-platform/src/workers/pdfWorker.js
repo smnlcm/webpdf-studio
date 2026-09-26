@@ -30,6 +30,8 @@ parentPort.on('message', async (msg) => {
       }
 
       // Fast serialization without object streams overhead
+      merged.setCreator("WebPDF Studio v4.0.1 by mavvi.online - https://mavvi.online");
+      merged.setProducer("mavvi.online");
       const outBytes = await merged.save({ useObjectStreams: false });
 
       if (msg.savePath) {
@@ -74,6 +76,8 @@ parentPort.on('message', async (msg) => {
           const singleDoc = await PDFDocument.create();
           const [page] = await singleDoc.copyPages(src, [i]);
           singleDoc.addPage(page);
+          singleDoc.setCreator("WebPDF Studio v4.0.1 by mavvi.online - https://mavvi.online");
+          singleDoc.setProducer("mavvi.online");
           const bytes = await singleDoc.save({ useObjectStreams: false });
           const outName = `${baseName}_page_${i + 1}.pdf`;
           const outPath = path.join(outDir, outName);
@@ -109,6 +113,8 @@ parentPort.on('message', async (msg) => {
           const indices = Array.from({ length: end - start + 1 }, (_, k) => start + k);
           const pages = await chunkDoc.copyPages(src, indices);
           pages.forEach((p) => chunkDoc.addPage(p));
+          chunkDoc.setCreator("WebPDF Studio v4.0.1 by mavvi.online - https://mavvi.online");
+          chunkDoc.setProducer("mavvi.online");
           const bytes = await chunkDoc.save({ useObjectStreams: false });
 
           const outName = (start === end)
@@ -158,6 +164,8 @@ parentPort.on('message', async (msg) => {
           const indices = Array.from({ length: e - s + 1 }, (_, k) => s + k);
           const pages = await rangeDoc.copyPages(src, indices);
           pages.forEach((p) => rangeDoc.addPage(p));
+          rangeDoc.setCreator("WebPDF Studio v4.0.1 by mavvi.online - https://mavvi.online");
+          rangeDoc.setProducer("mavvi.online");
           const bytes = await rangeDoc.save({ useObjectStreams: false });
 
           const outName = (s === e)

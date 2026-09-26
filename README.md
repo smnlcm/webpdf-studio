@@ -192,10 +192,9 @@ Windows x64 çıktısı `artifacts\publish\win-x64` klasörüne yazılır.
 
 The Windows x64 output is written to `artifacts\publish\win-x64`.
 
-## Lisans / License
+## License / Lisans
 
-Bu proje [MIT Lisansı](LICENSE) ile yayımlanır. Üçüncü taraf bağımlılıklar kendi
-lisans koşullarına tabidir.
-
-This project is released under the [MIT License](LICENSE). Third-party
-dependencies remain subject to their own license terms.
+- **v4.0.0 and earlier:** MIT License
+- **v4.0.1 and later:** GPL-3.0 License (see [LICENSE](LICENSE))
+- **Trademark:** WebPDF Studio name and logo © mavvi.online (see [TRADEMARK.md](TRADEMARK.md))
+- Third-party dependencies remain under their own respective licenses.

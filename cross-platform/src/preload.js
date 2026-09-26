@@ -25,3 +25,9 @@ contextBridge.exposeInMainWorld('webpdf', {
   },
   openExternal: (url) => ipcRenderer.invoke('open-external', url)
 });
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  openFileDialog: (options) => ipcRenderer.invoke('open-file-dialog', options),
+  readFile: (path) => ipcRenderer.invoke('read-file', path),
+  openExternal: (url) => ipcRenderer.invoke('open-external', url)
+});

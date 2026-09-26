@@ -13,7 +13,7 @@ function createMainWindow() {
     height: 900,
     minWidth: 1000,
     minHeight: 700,
-    title: 'WebPDF Studio v4.0 - VERIFIED',
+    title: 'WebPDF Studio v4.0.1 by mavvi.online',
     icon: path.join(__dirname, '../../build/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, '../preload.js'),
@@ -110,11 +110,22 @@ ipcMain.handle('create-pdf', async (event, params, legacyOpts) => {
       throw new Error('PDF generation produced an empty or invalid buffer');
     }
 
+    // Apply PDF Metadata Watermark
+    let finalBuf = buf;
+    try {
+      const pdfDoc = await PDFDocument.load(buf);
+      pdfDoc.setCreator("WebPDF Studio v4.0.1 by mavvi.online - https://mavvi.online");
+      pdfDoc.setProducer("mavvi.online");
+      finalBuf = Buffer.from(await pdfDoc.save({ useObjectStreams: false }));
+    } catch (_) {
+      finalBuf = buf;
+    }
+
     // If a savePath was designated, save directly to disk
     if (savePath) {
       const dir = path.dirname(savePath);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(savePath, buf);
+      fs.writeFileSync(savePath, finalBuf);
 
       if (!fs.existsSync(savePath)) {
         throw new Error('PDF file was not created on disk: ' + savePath);
@@ -132,7 +143,7 @@ ipcMain.handle('create-pdf', async (event, params, legacyOpts) => {
       };
     }
 
-    return buf;
+    return finalBuf;
   } finally {
     if (!win.isDestroyed()) win.close();
   }
@@ -409,4 +420,19 @@ ipcMain.handle('open-external', async (event, url) => {
   } catch (err) {
     return { success: false, error: err.message };
   }
+});
+
+ipcMain.handle('open-file-dialog', async (event, options) => {
+  try {
+    return await dialog.showOpenDialog(mainWindow, options || {
+      properties: ['openFile'],
+      filters: [{ name: 'HTML', extensions: ['html', 'htm'] }]
+    });
+  } catch (err) {
+    return { canceled: true, error: err.message };
+  }
+});
+
+ipcMain.handle('read-file', async (event, filePath) => {
+  return fs.readFileSync(filePath, 'utf-8');
 });
