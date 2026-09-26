@@ -1,200 +1,23 @@
-# WebPDF Studio
+# WebPDF Studio v4.2 Free Version by mavvi.online
 
-Modern HTML ve CSS belgelerini gerçek PDF önizlemesiyle dönüştüren masaüstü
-uygulaması. **WebPDF Studio V3.0.1**, tek kod tabanıyla Windows, macOS ve Linux'u
-destekler.
+High-performance desktop PDF studio for creating, merging, and splitting documents with exact precision. Powered by [mavvi.online](https://mavvi.online).
 
-Desktop application that converts modern HTML and CSS documents with an exact
-PDF preview. **WebPDF Studio V3.0.1** supports Windows, macOS and Linux from one
-codebase.
+- **Zero Upload / 100% Offline & Private**
+- **Create PDF from HTML & Web files with live preview**
+- **Merge PDFs with verified page integrity**
+- **Split PDF in Single-Page Mode (1 page = 1 file) or Custom Chunks**
+- **Multi-language support (English, Türkçe, Español, Deutsch, Русский, ไทย)**
+- **Cross-platform**: Windows (.exe), Linux (.AppImage, .deb), macOS (.dmg)
 
-## V3 platform desteği / V3 platform support
-
-- Windows x64 — `WebPDF.exe`, Squirrel kurulum paketi ve ZIP
-- macOS Intel — DMG ve ZIP
-- macOS Apple Silicon — DMG ve ZIP
-- Linux x64 — DEB ve ZIP
-
-macOS paketleri macOS 12 Monterey veya daha yenisini gerektirir. Mevcut açık
-kaynak paketler geçerli bir ad-hoc imzayla oluşturulur ancak Apple tarafından
-noterlenmemiştir. Bu nedenle Gatekeeper ilk açılışı engelleyebilir. İndirdiğiniz
-dosyanın `SHA256SUMS.txt` değerini doğruladıktan sonra uygulamayı Applications
-klasörüne taşıyıp şu komutla karantinadan çıkarabilirsiniz:
-
-```bash
-xattr -dr com.apple.quarantine "/Applications/WebPDF Studio.app"
-open "/Applications/WebPDF Studio.app"
-```
-
-The macOS packages require macOS 12 Monterey or newer. Current open-source
-packages have a valid ad-hoc signature but are not notarized by Apple, so
-Gatekeeper may block the first launch. After verifying the download against
-`SHA256SUMS.txt`, move the app to Applications and use the commands above.
-Normal warning-free distribution requires an Apple Developer ID and
-notarization.
-
-Linux'ta önerilen paket DEB'dir; kurulum Chromium sandbox sahipliğini güvenli
-biçimde ayarlar. ZIP sürümünü boşluk içermeyen bir klasöre çıkarın ve ardından
-bir kez:
-
-```bash
-sudo chown root:root chrome-sandbox
-sudo chmod 4755 chrome-sandbox
-./WebPDF
-```
-
-The DEB package is recommended on Linux because installation configures the
-Chromium sandbox safely. If you use the ZIP build, extract it to a path without
-spaces and run the commands above once inside the extracted application folder.
-
-V3 uygulaması `cross-platform` klasöründedir. Platform paketleri GitHub Actions
-üzerinde her işletim sisteminde ayrı ayrı oluşturulur.
-
-The V3 application is located in `cross-platform`. Platform packages are built
-separately for each operating system by GitHub Actions.
-
-## İndir / Download
-
-En güncel paketleri GitHub Releases sayfasından indirebilirsin:
-
-Download the latest packages from GitHub Releases:
-
-[WebPDF Studio - Latest Release](https://github.com/smnlcm/webpdf-studio/releases/latest)
-
-Windows ZIP paketinde çalıştırılabilir dosyanın adı `WebPDF.exe` şeklindedir.
-
-## Özellikler / Features
-
-- Windows, macOS ve Linux için tek Chromium PDF motoru
-- One Chromium PDF engine for Windows, macOS and Linux
-- HTML dosyasından veya yapıştırılan HTML kodundan PDF üretme
-- Generate PDFs from an HTML file or pasted HTML source
-- Kaydedilecek PDF ile birebir, sayfa genişliğinde önizleme
-- Exact, page-width preview of the PDF that will be saved
-- Modern Light (A) ve Dark Premium (C) arayüz temaları
-- Modern Light (A) and Dark Premium (C) interface themes
-- Serbestçe değiştirilebilen vurgu rengi
-- User-selectable accent color
-- Türkçe ve English arayüz
-- Turkish and English interface
-- Tema, renk ve dil tercihlerinin otomatik kaydı
-- Persistent theme, color and language preferences
-- Göreli CSS, görsel, SVG ve font yollarını destekleyen dosya modu
-- File mode with relative CSS, image, SVG and font support
-- A4 ve Letter; dikey ve yatay yön; ayrı kenar boşlukları ve ölçek
-- A4 and Letter; portrait and landscape; individual margins and scale
-- Arka plan ile tarayıcı üst/alt bilgi seçenekleri
-- Background and browser header/footer options
-- PDF başlığı, boyutu ve dosya imzası doğrulaması
-- PDF header, size and file-signature validation
-
-Eski DinkToPdf ve wkhtmltopdf DLL'leri kullanılmaz. V3, PDF üretimi için
-Electron Chromium'u; gerçek PDF sayfalarını göstermek için PDF.js'i kullanır.
-
-The legacy DinkToPdf and wkhtmltopdf DLLs are not used. V3 uses Electron
-Chromium to create PDFs and PDF.js to display the actual PDF pages.
-
-## V3 geliştirme / V3 development
-
-Gereksinimler: Node.js 22 ve npm.
-
-Requirements: Node.js 22 and npm.
-
-```powershell
-cd .\cross-platform
+## Quick Start
+`ash
 npm install
 npm start
-```
+`
 
-Kontrol, test ve yerel platform paketi:
+## Build
+`ash
+npm run build
+`
 
-Validation, smoke test and local-platform package:
-
-```powershell
-npm run check
-npm run smoke
-npm run make
-```
-
-`npm run smoke` artık dokuz gerçek PDF çıktısında A4/Letter, yön, dört ayrı
-kenar boşluğu, ölçek, arka plan, üst/alt bilgi ve göreli dosya varlıklarını
-ve güvenli üzerine yazma/kaydetme yolunu sayısal olarak doğrular. Dil, tema,
-renk kalıcılığı ve ayar değişiminden sonra otomatik önizleme yenilemesi de
-gerçek arayüz üzerinde sınanır. GitHub Actions, aynı testleri kaynak uygulamanın
-yanında paketlenmiş EXE, macOS app/DMG/ZIP ve Linux DEB/ZIP çıktılarında
-çalıştırır.
-
-`npm run smoke` now validates A4/Letter, orientation, all four independent
-margins, scale, backgrounds, header/footer, relative file assets, and the
-safe overwrite/save path across nine real PDF outputs. It also exercises
-language, theme, accent persistence, and automatic preview refresh in the real
-UI. GitHub Actions repeats the tests against the packaged Windows, macOS, and
-Linux applications.
-
-## Windows V2 (legacy)
-
-Mevcut .NET/WinForms tabanlı Windows V2 kaynakları `src/HtmlToPdfGuiV2`
-klasöründe korunmaktadır. V2 yalnızca Windows 10/11'i destekler ve Microsoft
-Edge WebView2 Runtime gerektirir.
-
-The existing .NET/WinForms Windows V2 source is preserved under
-`src/HtmlToPdfGuiV2`. V2 supports Windows 10/11 only and requires Microsoft
-Edge WebView2 Runtime.
-
-## V2 gereksinimleri / V2 requirements
-
-- Windows 10 veya Windows 11 / Windows 10 or Windows 11
-- Microsoft Edge WebView2 Runtime
-- Geliştirme için .NET 10 SDK / .NET 10 SDK for development
-
-Yayın paketi self-contained olarak hazırlanır; hedef bilgisayarda ayrıca .NET
-Runtime kurulması gerekmez.
-
-The published package is self-contained, so the target computer does not need a
-separate .NET Runtime installation.
-
-## Geliştirme / Development
-
-```powershell
-dotnet restore .\HtmlToPdfGuiV2.slnx
-dotnet build .\HtmlToPdfGuiV2.slnx --configuration Debug
-dotnet run --project .\src\HtmlToPdfGuiV2\HtmlToPdfGuiV2.csproj
-```
-
-## Kalite testleri / Quality tests
-
-PDF oluşturma ve önizleme:
-
-PDF creation and preview:
-
-```powershell
-dotnet run --project .\tools\SmokeTest\HtmlToPdfGuiV2.SmokeTest.csproj -- `
-  .\samples\quality-test\quality-test.html `
-  .\tmp\pdfs\v2-quality-test.pdf
-```
-
-Tema ve dil geçişleri:
-
-Theme and language switching:
-
-```powershell
-dotnet run --project .\tools\SmokeTest\HtmlToPdfGuiV2.SmokeTest.csproj -- `
-  --ui-theme
-```
-
-## Yayın / Publish
-
-```powershell
-.\publish.ps1
-```
-
-Windows x64 çıktısı `artifacts\publish\win-x64` klasörüne yazılır.
-
-The Windows x64 output is written to `artifacts\publish\win-x64`.
-
-## License / Lisans
-
-- **v4.0.0 and earlier:** MIT License
-- **v4.0.1 and later:** GPL-3.0 License (see [LICENSE](LICENSE))
-- **Trademark:** WebPDF Studio name and logo © mavvi.online (see [TRADEMARK.md](TRADEMARK.md))
-- Third-party dependencies remain under their own respective licenses.
+© 2026 mavvi.online — GPL-3.0 License
