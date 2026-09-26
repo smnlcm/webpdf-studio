@@ -10,3 +10,4 @@ cross-platform/node_modules/
 cross-platform/out/
 cross-platform/.vite/
 cross-platform/src/renderer/vendor/pdfjs/
+cross-platform/dist/

@@ -1,244 +1,1731 @@
-<!doctype html>
-<html lang="tr" data-theme="light">
-  <head>
-    <meta charset="UTF-8">
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'"
-    >
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebPDF Studio</title>
-    <link rel="stylesheet" href="./styles.css">
-  </head>
-  <body>
-    <div class="app-shell">
-      <header class="topbar">
-        <div class="brand">
-          <div class="brand-mark" aria-hidden="true">
-            <span>W</span>
-          </div>
-          <div>
-            <div class="brand-name">WebPDF <strong>Studio</strong></div>
-            <div class="brand-subtitle" data-i18n="brandSubtitle">
-              Profesyonel HTML → PDF
-            </div>
-          </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebPDF Studio v4.0 - VERIFIED</title>
+<script src="i18n.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f8fafc;
+  color: #0f172a;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Header */
+.top-header {
+  height: 60px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  justify-content: space-between;
+  user-select: none;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 19px;
+  color: #0f172a;
+}
+.logo-icon {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 800;
+  font-size: 17px;
+  box-shadow: 0 2px 6px rgba(37,99,235,0.25);
+}
+.version-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.header-info {
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Navigation Tabs */
+.nav-bar {
+  height: 46px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 6px;
+  user-select: none;
+}
+.nav-tab {
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.15s ease;
+}
+.nav-tab:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+.nav-tab.active {
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(37,99,235,0.2);
+}
+
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Common View Styles */
+.tool-view {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  overflow: auto;
+  background: #f8fafc;
+  padding: 24px;
+}
+.tool-view.active {
+  display: flex;
+}
+.tool-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 28px;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+/* Buttons */
+.btn-primary {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn-secondary {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+.btn-success {
+  background: #16a34a;
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-success:hover {
+  background: #15803d;
+}
+
+/* Convert / Editor Section */
+.editor-section {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  min-width: 0;
+}
+.toolbar {
+  height: 48px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 10px;
+}
+.editor-container {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  background: #0f172a;
+}
+.gutter {
+  width: 56px;
+  background: #1e293b;
+  color: #64748b;
+  text-align: right;
+  padding: 12px 10px 12px 0;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12.5px;
+  line-height: 20px;
+  user-select: none;
+  border-right: 1px solid #334155;
+  overflow: hidden;
+}
+.gutter .line-active {
+  color: #38bdf8;
+  background: #334155;
+  display: block;
+  margin-right: -10px;
+  padding-right: 10px;
+  font-weight: 700;
+}
+#htmlEditor {
+  flex: 1;
+  background: #0f172a;
+  color: #f1f5f9;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12.5px;
+  line-height: 20px;
+  padding: 12px 16px;
+  white-space: pre;
+  overflow: auto;
+}
+.preview-panel {
+  width: 45%;
+  background: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #e2e8f0;
+}
+.preview-header {
+  height: 40px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+#previewFrame {
+  flex: 1;
+  border: none;
+  background: #ffffff;
+}
+.status-bar {
+  height: 28px;
+  background: #1e293b;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 11px;
+  gap: 16px;
+  font-family: monospace;
+}
+
+/* Drop Zone */
+.drop-zone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+/* File Items */
+.file-list {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.file-item-delete {
+  color: #ef4444;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.file-item-delete:hover {
+  background: #fee2e2;
+}
+
+/* Split Rule Cards */
+.rule-card {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.rule-card:hover {
+  border-color: #93c5fd;
+}
+.rule-card.selected {
+  border-color: #2563eb;
+  background: #f0f7ff;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+}
+.rule-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 8px;
+  font-family: monospace;
+}
+
+/* Progress Box */
+.progress-box {
+  margin-top: 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: #dbeafe;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: #2563eb;
+  width: 0%;
+  transition: width 0.15s ease;
+}
+
+/* Result Box */
+.result-box {
+  margin-top: 16px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 18px;
+}
+.result-header {
+  font-weight: 700;
+  font-size: 15px;
+  color: #166534;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.result-details {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.6;
+  word-break: break-all;
+}
+.result-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* Log Box */
+.log-box {
+  background: #0f172a;
+  color: #38bdf8;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  padding: 12px;
+  border-radius: 8px;
+  max-height: 110px;
+  overflow-y: auto;
+  margin-top: 16px;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="top-header">
+  <div class="logo">
+    <img src="../../assets/icon.png" alt="Logo" style="width:36px;height:36px;border-radius:9px;object-fit:cover;box-shadow:0 2px 6px rgba(37,99,235,0.25);">
+    <span data-i18n="app_name">WebPDF Studio</span>
+    <span class="version-badge" id="appVersionBadge" data-i18n="badge_verified">v4.0 VERIFIED</span>
+  </div>
+  <div class="header-info">
+    <div style="display:flex;align-items:center;gap:6px">
+      <select id="langSelector" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:12.5px;font-weight:600;background:#ffffff;color:#1e293b;cursor:pointer;outline:none;">
+        <option value="en">🇺🇸 English</option>
+        <option value="tr">🇹🇷 Türkçe</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="ru">🇷🇺 Русский</option>
+        <option value="th">🇹🇭 ไทย</option>
+      </select>
+    </div>
+    <span>•</span>
+    <button id="topAboutBtn" class="btn-secondary" style="padding:5px 12px;font-size:12px;display:inline-flex;align-items:center;gap:4px;" data-i18n="tab_about">ℹ️ About</button>
+    <span>•</span>
+    <span style="color:#16a34a;font-weight:600">● Ready</span>
+  </div>
+</div>
+
+<!-- Navigation Tabs -->
+<div class="nav-bar">
+  <div class="nav-tab active" data-view="dashboard">Dashboard</div>
+  <div class="nav-tab" data-view="convert" data-i18n="tab_create">Create PDF</div>
+  <div class="nav-tab" data-view="merge" data-i18n="tab_merge">Merge PDFs</div>
+  <div class="nav-tab" data-view="split" data-i18n="tab_split">Split PDF</div>
+  <div class="nav-tab" data-view="compress">Compress</div>
+  <div class="nav-tab" data-view="ocr">OCR</div>
+</div>
+
+<!-- Main Views Container -->
+<div class="main-content">
+
+  <!-- DASHBOARD VIEW -->
+  <div id="dashboardView" class="tool-view active">
+    <div class="tool-card">
+      <h1 style="font-size:22px;margin-bottom:6px">WebPDF Studio v4.02 — Engine Verified</h1>
+      <p style="color:#64748b;font-size:14px;margin-bottom:20px">
+        Fully optimized for Windows, large 300+ page documents, and Turkish characters.
+      </p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px">
+          <div style="font-weight:700;color:#166534;margin-bottom:8px">✅ Verified Direct File Saving</div>
+          <p style="font-size:12.5px;color:#334155;line-height:1.5">
+            Save locations are prompted directly via native Windows dialogs. Files are written directly to disk and verified (size > 0), resolving the Adobe Acrobat "File cannot be found" issue.
+          </p>
         </div>
 
-        <div class="topbar-tools">
-          <div class="platform-badge" id="platformBadge">V3</div>
-          <label class="compact-control">
-            <span data-i18n="language">Dil</span>
-            <select id="languageSelect" aria-label="Language">
-              <option value="tr">Türkçe</option>
-              <option value="en">English</option>
-            </select>
-          </label>
-          <label class="color-control" title="Accent color">
-            <span data-i18n="accentColor">Renk</span>
-            <input id="accentPicker" type="color" value="#2563eb">
-          </label>
-          <button class="icon-button" id="themeButton" type="button">
-            <span id="themeIcon" aria-hidden="true">☾</span>
-            <span id="themeLabel" data-i18n="darkTheme">Koyu tema</span>
-          </button>
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px">
+          <div style="font-weight:700;color:#1d4ed8;margin-bottom:8px">⭐ Single-Page Mode for Split</div>
+          <p style="font-size:12.5px;color:#334155;line-height:1.5">
+            Extract every single page into an individual 1-page PDF file (e.g. 50 pages → 50 separate PDFs) automatically organized into a dedicated output folder.
+          </p>
         </div>
-      </header>
 
-      <main class="workspace">
-        <aside class="control-panel">
-          <section class="panel-section source-section">
-            <div class="section-heading">
-              <div>
-                <span class="eyebrow" data-i18n="stepOne">1 · KAYNAK</span>
-                <h1 data-i18n="sourceTitle">HTML içeriği</h1>
-              </div>
-              <div class="mode-tabs" role="tablist">
-                <button
-                  class="mode-tab active"
-                  id="fileTab"
-                  data-mode="file"
-                  type="button"
-                  role="tab"
-                  aria-selected="true"
-                  data-i18n="htmlFile"
-                >HTML dosyası</button>
-                <button
-                  class="mode-tab"
-                  id="codeTab"
-                  data-mode="code"
-                  type="button"
-                  role="tab"
-                  aria-selected="false"
-                  data-i18n="htmlCode"
-                >HTML kodu</button>
-              </div>
-            </div>
+        <div style="background:#fefce8;border:1px solid #fef08a;border-radius:10px;padding:16px">
+          <div style="font-weight:700;color:#854d0e;margin-bottom:8px">⚡ 300+ Page & Large File Performance</div>
+          <p style="font-size:12.5px;color:#334155;line-height:1.5">
+            Heavy files (like 330-page lecture notes) are processed using worker threads and streamed directly to disk, preventing memory crashes and IPC bottlenecks.
+          </p>
+        </div>
 
-            <div class="source-pane active" id="filePane">
-              <button class="file-card" id="selectFileButton" type="button">
-                <span class="file-icon" aria-hidden="true">&lt;/&gt;</span>
-                <span class="file-copy">
-                  <strong id="fileCardTitle" data-i18n="selectFile">
-                    HTML dosyası seç
-                  </strong>
-                  <small id="selectedFilePath" data-i18n="relativeAssets">
-                    CSS, görsel ve font bağlantıları korunur
-                  </small>
-                </span>
-                <span class="browse-label" data-i18n="browse">Gözat</span>
-              </button>
-            </div>
+        <div style="background:#fdf2f8;border:1px solid #fbcfe8;border-radius:10px;padding:16px">
+          <div style="font-weight:700;color:#9d174d;margin-bottom:8px">🇹🇷 Turkish Character & Path Support</div>
+          <p style="font-size:12.5px;color:#334155;line-height:1.5">
+            Full support for Turkish characters (<code>ı</code>, <code>ş</code>, <code>ğ</code>, <code>ç</code>, <code>ö</code>, <code>ü</code>) and Windows paths without path corruption or broken backslashes.
+          </p>
+        </div>
+      </div>
 
-            <div class="source-pane" id="codePane">
-              <textarea
-                id="htmlEditor"
-                spellcheck="false"
-                aria-label="HTML code"
-              ></textarea>
-            </div>
-          </section>
+      <div style="display:flex;gap:12px">
+        <button class="btn-primary" onclick="switchView('convert')">Create PDF from HTML →</button>
+        <button class="btn-secondary" onclick="switchView('merge')">Merge PDFs →</button>
+        <button class="btn-secondary" onclick="switchView('split')">Split PDF (Single Mode) →</button>
+      </div>
 
-          <section class="panel-section settings-section">
-            <div class="section-heading">
-              <div>
-                <span class="eyebrow" data-i18n="stepTwo">2 · AYARLAR</span>
-                <h2 data-i18n="pdfSettings">PDF ayarları</h2>
-              </div>
-              <button
-                class="text-button"
-                id="resetSettingsButton"
-                type="button"
-                data-i18n="reset"
-              >Sıfırla</button>
-            </div>
+      <div class="log-box" id="dashboardLog">System Ready: WebPDF Studio v4.02 initialized.</div>
+    </div>
+  </div>
 
-            <div class="settings-grid">
-              <label class="field">
-                <span data-i18n="paper">Kağıt</span>
-                <select id="pageSize">
-                  <option value="A4">A4</option>
-                  <option value="Letter">Letter</option>
-                </select>
-              </label>
-              <label class="field">
-                <span data-i18n="orientation">Yön</span>
-                <select id="orientation">
-                  <option value="portrait" data-i18n="portrait">Dikey</option>
-                  <option value="landscape" data-i18n="landscape">Yatay</option>
-                </select>
-              </label>
-              <label class="field">
-                <span data-i18n="scale">Ölçek</span>
-                <div class="number-suffix">
-                  <input id="scale" type="number" min="0.1" max="2" step="0.05" value="1">
-                  <span>×</span>
-                </div>
-              </label>
-            </div>
-
-            <fieldset class="margin-group">
-              <legend data-i18n="margins">Kenar boşlukları (mm)</legend>
-              <div class="margin-grid">
-                <label class="field compact">
-                  <span data-i18n="top">Üst</span>
-                  <input id="marginTop" type="number" min="0" max="100" step="1" value="12">
-                </label>
-                <label class="field compact">
-                  <span data-i18n="right">Sağ</span>
-                  <input id="marginRight" type="number" min="0" max="100" step="1" value="12">
-                </label>
-                <label class="field compact">
-                  <span data-i18n="bottom">Alt</span>
-                  <input id="marginBottom" type="number" min="0" max="100" step="1" value="12">
-                </label>
-                <label class="field compact">
-                  <span data-i18n="left">Sol</span>
-                  <input id="marginLeft" type="number" min="0" max="100" step="1" value="12">
-                </label>
-              </div>
-            </fieldset>
-
-            <div class="toggle-list">
-              <label class="toggle-row">
-                <span>
-                  <strong data-i18n="printBackground">Arka planları yazdır</strong>
-                  <small data-i18n="printBackgroundHint">Renk ve görselleri PDF’ye dahil eder</small>
-                </span>
-                <input id="printBackground" type="checkbox" checked>
-                <span class="switch" aria-hidden="true"></span>
-              </label>
-              <label class="toggle-row">
-                <span>
-                  <strong data-i18n="headerFooter">Üst/alt bilgi</strong>
-                  <small data-i18n="headerFooterHint">Başlık ve sayfa numarası ekler</small>
-                </span>
-                <input id="headerFooter" type="checkbox">
-                <span class="switch" aria-hidden="true"></span>
-              </label>
-            </div>
-          </section>
-
-          <div class="action-bar">
-            <button class="button secondary" id="previewButton" type="button">
-              <span aria-hidden="true">◉</span>
-              <span data-i18n="preview">Önizle</span>
-            </button>
-            <button class="button primary" id="saveButton" type="button">
-              <span aria-hidden="true">↓</span>
-              <span data-i18n="createPdf">PDF oluştur</span>
-            </button>
-            <button class="button danger hidden" id="cancelButton" type="button">
-              <span data-i18n="cancel">İptal</span>
-            </button>
-          </div>
-        </aside>
-
-        <section class="preview-panel">
-          <div class="preview-toolbar">
-            <div>
-              <span class="eyebrow" data-i18n="liveOutput">GERÇEK ÇIKTI</span>
-              <h2 data-i18n="previewTitle">PDF önizleme</h2>
-            </div>
-            <div class="preview-meta">
-              <span id="pageCount">—</span>
-              <span class="meta-divider"></span>
-              <span id="pdfSize">—</span>
-            </div>
-          </div>
-
-          <div class="preview-viewport" id="previewViewport">
-            <div class="empty-state" id="emptyState">
-              <div class="empty-illustration" aria-hidden="true">
-                <div class="empty-page back"></div>
-                <div class="empty-page front">
-                  <span></span><span></span><span></span><span></span>
-                </div>
-                <div class="spark">✦</div>
-              </div>
-              <h3 data-i18n="emptyTitle">PDF’niz burada görünecek</h3>
-              <p data-i18n="emptyBody">
-                Bir HTML dosyası seçin veya kodunuzu yapıştırın, ardından Önizle’ye basın.
-              </p>
-            </div>
-            <div class="loading-state hidden" id="loadingState">
-              <div class="spinner"></div>
-              <strong data-i18n="rendering">PDF hazırlanıyor…</strong>
-              <small data-i18n="renderingHint">Fontlar ve görseller yükleniyor</small>
-            </div>
-            <div class="pdf-pages hidden" id="pdfPages"></div>
-          </div>
-        </section>
-      </main>
-
-      <footer class="statusbar">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusText" data-i18n="ready">Hazır</span>
-        <span class="status-spacer"></span>
-        <span id="engineText">Chromium PDF Engine</span>
-      </footer>
+  <!-- CONVERT VIEW (HTML to PDF) -->
+  <div id="convertView" class="editor-section">
+    <div class="toolbar">
+      <button class="btn-primary" id="createPdfBtn">Create PDF</button>
+      <button class="btn-secondary" id="refreshPreviewBtn">Refresh Preview</button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:14px;font-size:12px;color:#64748b">
+        <span>Page: A4 (Portrait)</span>
+        <span>•</span>
+        <span>Asks save location & verifies file</span>
+      </div>
     </div>
 
-    <script type="module" src="./app.js"></script>
-  </body>
+    <div style="display:flex;flex:1;min-height:0">
+      <div class="editor-container">
+        <div class="gutter" id="lineNumbers">1</div>
+        <textarea id="htmlEditor" spellcheck="false"><!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1e293b; }
+    h1 { color: #2563eb; font-size: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
+    p { font-size: 14px; line-height: 1.6; margin-top: 16px; }
+    .badge { display: inline-block; background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>WebPDF Studio v4.02 — Document Test</h1>
+  <p><span class="badge">Status: Verified</span></p>
+  <p>This document is generated directly using Chromium printToPDF with verified disk serialization. Adobe Acrobat opens this file seamlessly without errors.</p>
+  <p>Türkçe karakter testi: ÇŞĞÜÖİ ı ş ğ ü ö ç.</p>
+</body>
+</html></textarea>
+      </div>
+
+      <div class="preview-panel">
+        <div class="preview-header">
+          <span>Live Document Preview</span>
+          <span id="previewStatus" style="color:#16a34a">● Live</span>
+        </div>
+        <iframe id="previewFrame"></iframe>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <span id="lineCol">Ln 1, Col 1</span>
+      <span id="totalLines">Total: 19 lines</span>
+      <span id="fileSize">~ 0.8 KB</span>
+      <span style="margin-left:auto">Direct-to-Disk Writer Ready</span>
+    </div>
+
+    <!-- Convert Result Area -->
+    <div id="convertResultArea" style="display:none;padding:16px 24px;background:#ffffff;border-top:1px solid #e2e8f0">
+      <div class="result-box" style="margin:0">
+        <div class="result-header">✅ PDF Successfully Created & Verified!</div>
+        <div class="result-details" id="convertResultDetails"></div>
+        <div class="result-actions">
+          <button class="btn-primary" id="openCreatedPdfBtn">Open in Adobe / Default Viewer</button>
+          <button class="btn-secondary" id="showCreatedPdfFolderBtn">Show in Folder</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="log-box" id="convertLog" style="margin:0;border-radius:0">Ready to create PDF.</div>
+  </div>
+
+  <!-- MERGE VIEW -->
+  <div id="mergeView" class="tool-view">
+    <div class="tool-card">
+      <h1 style="font-size:22px;margin-bottom:6px">Merge Multiple PDFs</h1>
+      <p style="color:#64748b;font-size:14px;margin-bottom:18px">
+        Combine multiple PDF files into one continuous document. Prompts for destination file up-front and handles 300+ pages efficiently.
+      </p>
+
+      <div class="drop-zone" id="mergeDropZone">
+        <div style="font-size:15px;font-weight:600;color:#1e293b">Drag &amp; Drop PDF files here</div>
+        <div style="font-size:13px;color:#64748b;margin:6px 0 14px">or click anywhere in this box to select files</div>
+        <button class="btn-primary" id="addFilesMergeBtn" type="button">+ Select PDF Files</button>
+      </div>
+
+      <!-- Merge List Controls -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px">
+        <div style="font-size:13px;font-weight:600;color:#334155" id="mergeFileCountText">Files to Merge: 0</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary" id="autoSortMergeBtn" type="button" style="padding:6px 14px;font-size:12px;font-weight:600;color:#2563eb;border-color:#bfdbfe;background:#eff6ff">
+            ⚡ Auto-Sort Naturally (1&rarr;N)
+          </button>
+          <button class="btn-secondary" id="clearMergeBtn" type="button" style="padding:6px 12px;font-size:12px;color:#ef4444">
+            Clear List
+          </button>
+        </div>
+      </div>
+
+      <div id="mergeFileList" class="file-list"></div>
+
+      <!-- Merge Plan & Sequence Preview -->
+      <div id="mergePlanCard" style="margin-top:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;font-size:13px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <strong style="color:#0f172a;font-size:13.5px">Merge Sequence Preview</strong>
+          <span id="mergeSequenceBadge" style="font-size:11.5px;color:#15803d;background:#dcfce7;padding:2px 8px;border-radius:12px;font-weight:600;display:none">Order Confirmed</span>
+        </div>
+        <div id="mergePlanDetails" style="color:#64748b;font-size:12.5px;line-height:1.6">
+          Add at least 2 PDF files to preview the merge order.
+        </div>
+      </div>
+
+      <div id="mergeProgressBox" class="progress-box" style="display:none">
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:#1d4ed8">
+          <span id="mergeProgressText">Merging files...</span>
+          <span id="mergeProgressPercent">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="mergeProgressBarFill"></div>
+        </div>
+      </div>
+
+      <div id="mergeResultBox" class="result-box" style="display:none">
+        <div class="result-header">✅ Merged PDF Successfully Saved!</div>
+        <div class="result-details" id="mergeResultDetails"></div>
+        <div class="result-actions">
+          <button class="btn-primary" id="openMergedPdfBtn">Open Merged PDF</button>
+          <button class="btn-secondary" id="showMergedFolderBtn">Show in Folder</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+        <button class="btn-primary" id="doMergeBtn" style="padding:11px 24px;font-size:14px" disabled>
+          Merge &amp; Save PDF...
+        </button>
+      </div>
+
+      <div class="log-box" id="mergeLog">Ready: Add at least 2 PDF files to merge.</div>
+    </div>
+  </div>
+
+  <!-- SPLIT VIEW -->
+  <div id="splitView" class="tool-view">
+    <div class="tool-card">
+      <h1 style="font-size:22px;margin-bottom:6px" data-i18n="Split PDF Document">Split PDF Document</h1>
+      <p style="color:#64748b;font-size:14px;margin-bottom:18px" data-i18n="Extract single pages">
+        Extract single pages or custom chunks into dedicated, organized PDF files.
+      </p>
+
+      <div class="drop-zone" id="splitDropZone" style="padding:22px">
+        <div style="font-size:14px;font-weight:600;color:#1e293b" id="splitLoadedText">
+          Select or drop a PDF file to split
+        </div>
+        <button class="btn-secondary" id="selectSplitFileBtn" style="margin-top:10px" type="button">
+          Choose PDF File
+        </button>
+      </div>
+
+      <!-- Mode selection with mutually exclusive radio cards -->
+      <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:20px;margin-top:20px">
+        <div>
+          <!-- MODE A: Single Page Mode (Default) -->
+          <div class="rule-card selected" id="singleModeCard" style="border-color:#2563eb;background:#f0f7ff">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;font-weight:600;font-size:14px;color:#1e293b">
+              <input type="radio" name="splitModeRadio" id="radioSingle" value="single" checked style="width:16px;height:16px;accent-color:#2563eb;cursor:pointer">
+              <span data-i18n="Split into Single Pages">Split into Single Pages (1 page = 1 PDF)</span>
+              <span style="font-size:11px;background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-weight:600">Default</span>
+            </label>
+            <div id="singleModeContent" style="margin-top:8px;font-size:12.5px;color:#64748b;line-height:1.5">
+              Extracts every page into a standalone 1-page PDF file.<br>
+              <span id="singleModeExampleText">e.g. 20-page PDF &rarr; 20 separate files (<code>_page_1.pdf</code> ... <code>_page_20.pdf</code>)</span>
+            </div>
+          </div>
+
+          <!-- MODE B: Chunk Mode -->
+          <div class="rule-card" id="chunkModeCard">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;font-weight:600;font-size:14px;color:#1e293b">
+              <input type="radio" name="splitModeRadio" id="radioChunk" value="chunk" style="width:16px;height:16px;accent-color:#2563eb;cursor:pointer">
+              <span data-i18n="Split by Every X Pages">Split by Every X Pages (Chunk Mode)</span>
+            </label>
+            <div id="chunkModeContent" style="display:none;margin-top:10px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:13px;color:#475569;font-weight:500" data-i18n="Pages per chunk">Pages per chunk:</span>
+                <input id="chunkSizeInput" type="number" value="2" min="1" max="1000" style="width:80px;padding:6px 10px;border:1.5px solid #cbd5e1;border-radius:6px;text-align:center;font-weight:600">
+              </div>
+              <div id="chunkModeExampleText" style="font-size:12px;color:#64748b;margin-top:6px">
+                e.g. 20 pages / 2 pages each &rarr; 10 files (pages 1-2, 3-4, etc.)
+              </div>
+            </div>
+          </div>
+
+          <!-- MODE C: Custom Ranges -->
+          <div class="rule-card" id="rangeModeCard">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;font-weight:600;font-size:14px;color:#1e293b">
+              <input type="radio" name="splitModeRadio" id="radioRange" value="range" style="width:16px;height:16px;accent-color:#2563eb;cursor:pointer">
+              <span data-i18n="Custom Ranges">Custom Ranges</span>
+            </label>
+            <div id="rangeModeContent" style="display:none;margin-top:10px">
+              <input class="rule-input" id="rangeInput" value="1-5, 6, 10-20" placeholder="e.g. 1-5, 8, 10-20">
+              <div style="font-size:12px;color:#64748b;margin-top:6px">
+                Specify comma-separated ranges or single page numbers (e.g. 1-5, 6, 10-20).
+              </div>
+            </div>
+          </div>
+
+          <!-- Output Folder Selection -->
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-top:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12.5px;font-weight:600" data-i18n="Output Folder">Output Folder:</span>
+              <button class="btn-secondary" id="changeSplitFolderBtn" style="padding:4px 10px;font-size:11.5px" data-i18n="Change Folder">Change Folder</button>
+            </div>
+            <div id="splitFolderDisplay" style="font-size:12px;color:#64748b;margin-top:4px;word-break:break-all">
+              Automatic dedicated folder: [Document_Name]_pages/
+            </div>
+          </div>
+
+          <button class="btn-primary" id="doSplitBtn" style="width:100%;margin-top:16px;padding:12px;font-size:14px" disabled>
+            Select a PDF file first
+          </button>
+        </div>
+
+        <!-- Preview of Split Files -->
+        <div>
+          <h3 style="font-size:14px;color:#334155;margin-bottom:10px" data-i18n="Split Plan & Output Preview">Split Plan &amp; Output Preview</h3>
+          <div id="splitPreviewCard" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:18px;font-size:13px;color:#475569">
+            Please load a PDF to view split details.
+          </div>
+        </div>
+      </div>
+
+      <!-- Split Progress Box -->
+      <div id="splitProgressBox" class="progress-box" style="display:none">
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:#1d4ed8">
+          <span id="splitProgressText">Splitting PDF...</span>
+          <span id="splitProgressPercent">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="splitProgressBarFill"></div>
+        </div>
+      </div>
+
+      <!-- Split Result Box -->
+      <div id="splitResultBox" class="result-box" style="display:none">
+        <div class="result-header" data-i18n="PDF Split Completed Successfully!">✅ PDF Split Completed Successfully!</div>
+        <div class="result-details" id="splitResultDetails"></div>
+        <div class="result-actions">
+          <button class="btn-primary" id="openSplitFolderBtn" data-i18n="Open Output Folder">Open Output Folder</button>
+        </div>
+      </div>
+
+      <div class="log-box" id="splitLog">Ready: Select a PDF to split.</div>
+    </div>
+  </div>
+
+  <!-- COMPRESS VIEW -->
+  <div id="compressView" class="tool-view">
+    <div class="tool-card" style="text-align:center;padding:48px 24px">
+      <div style="font-size:36px;margin-bottom:12px">🗜️</div>
+      <h2 style="margin-bottom:8px">PDF Compression Engine</h2>
+      <p style="color:#64748b;max-width:500px;margin:0 auto 20px;font-size:14px">
+        Advanced image downsampling and font deduplication module will be available in the upcoming v5.0 release.
+      </p>
+      <button class="btn-secondary" onclick="switchView('dashboard')">Return to Dashboard</button>
+    </div>
+  </div>
+
+  <!-- OCR VIEW -->
+  <div id="ocrView" class="tool-view">
+    <div class="tool-card" style="text-align:center;padding:48px 24px">
+      <div style="font-size:36px;margin-bottom:12px">🔍</div>
+      <h2 style="margin-bottom:8px">OCR Text Recognition</h2>
+      <p style="color:#64748b;max-width:500px;margin:0 auto 20px;font-size:14px">
+        Tesseract OCR engine integration with Turkish and multi-language support will be available in the upcoming v5.0 release.
+      </p>
+      <button class="btn-secondary" onclick="switchView('dashboard')">Return to Dashboard</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Navigation Tab Switching
+const navTabs = document.querySelectorAll('.nav-tab');
+const views = {
+  dashboard: document.getElementById('dashboardView'),
+  convert: document.getElementById('convertView'),
+  merge: document.getElementById('mergeView'),
+  split: document.getElementById('splitView'),
+  compress: document.getElementById('compressView'),
+  ocr: document.getElementById('ocrView')
+};
+
+function switchView(name) {
+  navTabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.view === name));
+  Object.keys(views).forEach((k) => {
+    if (k === 'convert') {
+      views[k].style.display = (name === k) ? 'flex' : 'none';
+    } else {
+      views[k].classList.toggle('active', name === k);
+      views[k].style.display = (name === k) ? 'flex' : 'none';
+    }
+  });
+}
+navTabs.forEach((tab) => tab.addEventListener('click', () => switchView(tab.dataset.view)));
+
+// Logging helper
+function appendLog(elementId, message) {
+  const el = document.getElementById(elementId);
+  if (el) {
+    const time = new Date().toLocaleTimeString();
+    el.textContent = `[${time}] ${message}\n` + el.textContent.substring(0, 1500);
+  }
+}
+
+// -------------------------------------------------------------
+// 1. HTML CONVERT SECTION
+// -------------------------------------------------------------
+const editor = document.getElementById('htmlEditor');
+const lineNumbers = document.getElementById('lineNumbers');
+const lineColEl = document.getElementById('lineCol');
+const totalLinesEl = document.getElementById('totalLines');
+const fileSizeEl = document.getElementById('fileSize');
+const previewFrame = document.getElementById('previewFrame');
+let lastCreatedPdfPath = null;
+
+function updateEditorGutter() {
+  const text = editor.value;
+  const lines = text.split('\n');
+  const total = lines.length;
+  const cursorPos = editor.selectionStart;
+  const currentLine = text.substring(0, cursorPos).split('\n').length;
+
+  let gutterHtml = '';
+  for (let i = 1; i <= total; i++) {
+    if (i === currentLine) {
+      gutterHtml += `<span class="line-active">${i}</span>\n`;
+    } else {
+      gutterHtml += `${i}\n`;
+    }
+  }
+  lineNumbers.innerHTML = gutterHtml;
+  lineColEl.textContent = `Ln ${currentLine}, Col 1`;
+  totalLinesEl.textContent = `Total: ${total} lines`;
+  fileSizeEl.textContent = `~ ${(new Blob([text]).size / 1024).toFixed(1)} KB`;
+}
+
+function updatePreview() {
+  previewFrame.srcdoc = editor.value;
+}
+
+let previewDebounceTimer = null;
+editor.addEventListener('input', () => {
+  updateEditorGutter();
+  clearTimeout(previewDebounceTimer);
+  previewDebounceTimer = setTimeout(updatePreview, 200);
+});
+editor.addEventListener('scroll', () => {
+  lineNumbers.scrollTop = editor.scrollTop;
+});
+editor.addEventListener('click', updateEditorGutter);
+editor.addEventListener('keyup', updateEditorGutter);
+updateEditorGutter();
+updatePreview();
+
+document.getElementById('refreshPreviewBtn').addEventListener('click', updatePreview);
+
+// Create PDF Action
+document.getElementById('createPdfBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('createPdfBtn');
+  const resultArea = document.getElementById('convertResultArea');
+  const resultDetails = document.getElementById('convertResultDetails');
+  resultArea.style.display = 'none';
+
+  const html = editor.value.trim();
+  if (!html) {
+    alert('Please enter HTML content before creating a PDF.');
+    return;
+  }
+
+  appendLog('convertLog', 'Prompting for save location...');
+  const savePath = await window.webpdf.saveFile('document.pdf');
+  if (!savePath) {
+    appendLog('convertLog', 'Save cancelled by user.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Generating PDF...';
+  appendLog('convertLog', `Writing directly to: ${savePath}`);
+
+  try {
+    const res = await window.webpdf.createPdf({
+      htmlContent: html,
+      options: { paper: 'A4', orientation: 'portrait' },
+      savePath: savePath
+    });
+
+    if (res && res.success) {
+      lastCreatedPdfPath = res.path;
+      resultArea.style.display = 'block';
+      resultDetails.innerHTML = `
+        <strong>File Path:</strong> ${res.path}<br>
+        <strong>File Size:</strong> ${res.sizeKB} KB (${res.size.toLocaleString()} bytes)
+      `;
+      appendLog('convertLog', `Successfully created and verified: ${res.path} (${res.sizeKB} KB)`);
+    } else {
+      throw new Error((res && res.error) || 'Failed to verify created PDF file.');
+    }
+  } catch (err) {
+    alert('PDF Creation Error: ' + err.message);
+    appendLog('convertLog', 'Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create PDF';
+  }
+});
+
+document.getElementById('openCreatedPdfBtn').addEventListener('click', async () => {
+  if (lastCreatedPdfPath) {
+    await window.webpdf.openFile(lastCreatedPdfPath);
+  }
+});
+
+document.getElementById('showCreatedPdfFolderBtn').addEventListener('click', async () => {
+  if (lastCreatedPdfPath) {
+    await window.webpdf.showInFolder(lastCreatedPdfPath);
+  }
+});
+
+// -------------------------------------------------------------
+// 2. MERGE SECTION (Natural Sort & Visual Sequence Confirmation)
+// -------------------------------------------------------------
+let mergeFileList = [];
+let lastMergedPdfPath = null;
+let draggedMergeIdx = null;
+
+// Natural Sort function (1, 2, 3... 10 instead of 1, 10, 2)
+function sortFilesNaturally(list) {
+  const getFilename = (p) => (typeof p === 'string' ? p : p.name || p.path || '').split(/[/\\]/).pop();
+
+  return [...list].sort((a, b) => {
+    const nameA = getFilename(a);
+    const nameB = getFilename(b);
+    return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+  });
+}
+
+function updateMergePlan() {
+  const countEl = document.getElementById('mergeFileCountText');
+  const detailsEl = document.getElementById('mergePlanDetails');
+  const badgeEl = document.getElementById('mergeSequenceBadge');
+  const mergeBtn = document.getElementById('doMergeBtn');
+
+  const total = mergeFileList.length;
+  if (countEl) countEl.textContent = `Files to Merge: ${total}`;
+
+  if (total < 2) {
+    if (badgeEl) badgeEl.style.display = 'none';
+    if (detailsEl) detailsEl.innerHTML = '<span style="color:#94a3b8">Add at least 2 PDF files to preview and confirm the merge order.</span>';
+    if (mergeBtn) {
+      mergeBtn.disabled = true;
+      mergeBtn.textContent = 'Merge & Save PDF...';
+    }
+    return;
+  }
+
+  if (badgeEl) badgeEl.style.display = 'inline-block';
+  if (mergeBtn) {
+    mergeBtn.disabled = false;
+    mergeBtn.textContent = `Merge ${total} Files in Sequence...`;
+  }
+
+  const getFilename = (p) => p.split(/[/\\]/).pop();
+  const previewItems = [];
+  const maxItems = Math.min(total, 5);
+
+  for (let i = 0; i < maxItems; i++) {
+    previewItems.push(`<strong>${i + 1}.</strong> ${getFilename(mergeFileList[i])}`);
+  }
+  if (total > 5) {
+    previewItems.push(`<em>... ${total - 6} more file(s) ...</em>`);
+    previewItems.push(`<strong>${total}.</strong> ${getFilename(mergeFileList[total - 1])}`);
+  }
+
+  if (detailsEl) {
+    detailsEl.innerHTML = `
+      <div style="font-weight:700;color:#1d4ed8;margin-bottom:6px">
+        Merging ${total} files in order: 1 &rarr; ${total}
+      </div>
+      <div style="font-size:12px;color:#475569;line-height:1.6">
+        ${previewItems.join('<br>')}
+      </div>
+    `;
+  }
+}
+
+function renderMergeFiles() {
+  const container = document.getElementById('mergeFileList');
+  container.innerHTML = '';
+
+  if (!mergeFileList.length) {
+    container.innerHTML = '<div style="font-size:12.5px;color:#94a3b8;padding:12px;text-align:center;background:#fff;border:1px dashed #e2e8f0;border-radius:8px">No files selected yet. Drop files above or click "+ Select PDF Files".</div>';
+    updateMergePlan();
+    return;
+  }
+
+  mergeFileList.forEach((filePath, idx) => {
+    const fileName = filePath.split(/[/\\]/).pop();
+    const row = document.createElement('div');
+    row.className = 'file-item';
+    row.draggable = true;
+    row.style.cursor = 'grab';
+    row.style.userSelect = 'none';
+
+    // Drag-and-drop reordering
+    row.addEventListener('dragstart', (e) => {
+      draggedMergeIdx = idx;
+      e.dataTransfer.effectAllowed = 'move';
+      row.style.opacity = '0.5';
+    });
+    row.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      row.style.borderTop = '2px solid #2563eb';
+    });
+    row.addEventListener('dragleave', () => {
+      row.style.borderTop = '1px solid #e2e8f0';
+    });
+    row.addEventListener('drop', (e) => {
+      e.preventDefault();
+      row.style.borderTop = '1px solid #e2e8f0';
+      if (draggedMergeIdx !== null && draggedMergeIdx !== idx) {
+        const item = mergeFileList.splice(draggedMergeIdx, 1)[0];
+        mergeFileList.splice(idx, 0, item);
+        renderMergeFiles();
+        appendLog('mergeLog', `Reordered: moved "${fileName}" to position ${idx + 1}`);
+      }
+    });
+    row.addEventListener('dragend', () => {
+      row.style.opacity = '1';
+      draggedMergeIdx = null;
+    });
+
+    // Left: Position Number & File Name
+    const leftCol = document.createElement('div');
+    leftCol.style.display = 'flex';
+    leftCol.style.alignItems = 'center';
+    leftCol.style.gap = '10px';
+    leftCol.style.minWidth = '0';
+    leftCol.style.flex = '1';
+
+    const numBadge = document.createElement('span');
+    numBadge.style.background = '#dbeafe';
+    numBadge.style.color = '#1d4ed8';
+    numBadge.style.fontWeight = '700';
+    numBadge.style.fontSize = '12px';
+    numBadge.style.padding = '3px 8px';
+    numBadge.style.borderRadius = '6px';
+    numBadge.style.minWidth = '24px';
+    numBadge.style.textAlign = 'center';
+    numBadge.textContent = `${idx + 1}`;
+
+    const label = document.createElement('span');
+    label.style.fontWeight = '500';
+    label.style.fontSize = '13px';
+    label.style.whiteSpace = 'nowrap';
+    label.style.overflow = 'hidden';
+    label.style.textOverflow = 'ellipsis';
+    label.title = filePath;
+    label.textContent = fileName;
+
+    leftCol.appendChild(numBadge);
+    leftCol.appendChild(label);
+
+    // Right: Up / Down / Remove buttons
+    const rightCol = document.createElement('div');
+    rightCol.style.display = 'flex';
+    rightCol.style.alignItems = 'center';
+    rightCol.style.gap = '6px';
+
+    const upBtn = document.createElement('button');
+    upBtn.className = 'btn-secondary';
+    upBtn.style.padding = '3px 7px';
+    upBtn.style.fontSize = '11px';
+    upBtn.title = 'Move Up';
+    upBtn.textContent = '▲';
+    upBtn.disabled = (idx === 0);
+    upBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (idx > 0) {
+        const temp = mergeFileList[idx];
+        mergeFileList[idx] = mergeFileList[idx - 1];
+        mergeFileList[idx - 1] = temp;
+        renderMergeFiles();
+        appendLog('mergeLog', `Moved "${fileName}" up to position ${idx}`);
+      }
+    });
+
+    const downBtn = document.createElement('button');
+    downBtn.className = 'btn-secondary';
+    downBtn.style.padding = '3px 7px';
+    downBtn.style.fontSize = '11px';
+    downBtn.title = 'Move Down';
+    downBtn.textContent = '▼';
+    downBtn.disabled = (idx === mergeFileList.length - 1);
+    downBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (idx < mergeFileList.length - 1) {
+        const temp = mergeFileList[idx];
+        mergeFileList[idx] = mergeFileList[idx + 1];
+        mergeFileList[idx + 1] = temp;
+        renderMergeFiles();
+        appendLog('mergeLog', `Moved "${fileName}" down to position ${idx + 2}`);
+      }
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'file-item-delete';
+    delBtn.textContent = '✕';
+    delBtn.title = 'Remove File';
+    delBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      mergeFileList.splice(idx, 1);
+      renderMergeFiles();
+      appendLog('mergeLog', `Removed file: ${fileName}`);
+    });
+
+    rightCol.appendChild(upBtn);
+    rightCol.appendChild(downBtn);
+    rightCol.appendChild(delBtn);
+
+    row.appendChild(leftCol);
+    row.appendChild(rightCol);
+    container.appendChild(row);
+  });
+
+  updateMergePlan();
+}
+
+async function handleAddMergeFiles() {
+  const files = await window.webpdf.openFiles();
+  if (files && files.length) {
+    mergeFileList.push(...files);
+    // Auto-sort naturally on add
+    mergeFileList = sortFilesNaturally(mergeFileList);
+    renderMergeFiles();
+    appendLog('mergeLog', `Added ${files.length} file(s) and auto-sorted naturally (1→N).`);
+  }
+}
+
+document.getElementById('addFilesMergeBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  handleAddMergeFiles();
+});
+document.getElementById('mergeDropZone').addEventListener('click', handleAddMergeFiles);
+
+document.getElementById('mergeDropZone').addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.currentTarget.classList.add('dragover');
+});
+document.getElementById('mergeDropZone').addEventListener('dragleave', (e) => {
+  e.currentTarget.classList.remove('dragover');
+});
+document.getElementById('mergeDropZone').addEventListener('drop', (e) => {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  const files = e.dataTransfer.files;
+  if (files && files.length) {
+    let count = 0;
+    for (let i = 0; i < files.length; i++) {
+      try {
+        const fp = window.webpdf.getPathForFile(files[i]);
+        if (fp && fp.toLowerCase().endsWith('.pdf')) {
+          mergeFileList.push(fp);
+          count++;
+        }
+      } catch (_) {}
+    }
+    if (count > 0) {
+      // Auto-sort naturally on drop
+      mergeFileList = sortFilesNaturally(mergeFileList);
+      renderMergeFiles();
+      appendLog('mergeLog', `Dropped ${count} PDF file(s) and auto-sorted naturally (1→N).`);
+    }
+  }
+});
+
+// Auto-sort button handler
+document.getElementById('autoSortMergeBtn').addEventListener('click', () => {
+  if (mergeFileList.length > 0) {
+    mergeFileList = sortFilesNaturally(mergeFileList);
+    renderMergeFiles();
+    appendLog('mergeLog', 'Re-sorted files in natural numeric order (1→N).');
+  }
+});
+
+document.getElementById('clearMergeBtn').addEventListener('click', () => {
+  mergeFileList = [];
+  renderMergeFiles();
+  document.getElementById('mergeResultBox').style.display = 'none';
+  appendLog('mergeLog', 'Cleared file list.');
+});
+
+// Real-time Merge Progress Listener
+window.webpdf.onMergeProgress((data) => {
+  const progressText = document.getElementById('mergeProgressText');
+  const progressPercent = document.getElementById('mergeProgressPercent');
+  const progressFill = document.getElementById('mergeProgressBarFill');
+
+  progressText.textContent = `Merging file ${data.current} of ${data.total} (${data.pages} pages total)...`;
+  progressPercent.textContent = `${data.percent}%`;
+  progressFill.style.width = `${data.percent}%`;
+});
+
+document.getElementById('doMergeBtn').addEventListener('click', async () => {
+  if (mergeFileList.length < 2) {
+    alert('Please add at least 2 PDF files to perform a merge.');
+    return;
+  }
+
+  appendLog('mergeLog', 'Prompting for merged save location...');
+  const savePath = await window.webpdf.saveFile('merged_document.pdf');
+  if (!savePath) {
+    appendLog('mergeLog', 'Merge cancelled by user.');
+    return;
+  }
+
+  const btn = document.getElementById('doMergeBtn');
+  const progressBox = document.getElementById('mergeProgressBox');
+  const resultBox = document.getElementById('mergeResultBox');
+  const resultDetails = document.getElementById('mergeResultDetails');
+
+  btn.disabled = true;
+  resultBox.style.display = 'none';
+  progressBox.style.display = 'block';
+
+  appendLog('mergeLog', `Starting merge of ${mergeFileList.length} files in verified sequence into: ${savePath}`);
+
+  try {
+    const res = await window.webpdf.mergePdfs({
+      filePaths: mergeFileList,
+      savePath: savePath
+    });
+
+    if (res && res.success) {
+      lastMergedPdfPath = res.path;
+      resultBox.style.display = 'block';
+      resultDetails.innerHTML = `
+        <strong>File Path:</strong> ${res.path}<br>
+        <strong>Total Pages:</strong> ${res.pages}<br>
+        <strong>File Size:</strong> ${res.sizeKB} KB (${res.size.toLocaleString()} bytes)
+      `;
+      appendLog('mergeLog', `Merge completed in verified sequence: ${res.path} (${res.pages} pages, ${res.sizeKB} KB)`);
+    } else {
+      throw new Error((res && res.error) || 'Failed to merge PDF files.');
+    }
+  } catch (err) {
+    alert('Merge Error: ' + err.message);
+    appendLog('mergeLog', 'Error: ' + err.message);
+  } finally {
+    progressBox.style.display = 'none';
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('openMergedPdfBtn').addEventListener('click', async () => {
+  if (lastMergedPdfPath) await window.webpdf.openFile(lastMergedPdfPath);
+});
+document.getElementById('showMergedFolderBtn').addEventListener('click', async () => {
+  if (lastMergedPdfPath) await window.webpdf.showInFolder(lastMergedPdfPath);
+});
+
+// -------------------------------------------------------------
+// 3. SPLIT SECTION (Mutually Exclusive Radio Modes)
+// -------------------------------------------------------------
+let splitLoadedFile = null;
+let splitMode = 'single';
+let customSplitOutputDir = null;
+let lastSplitOutputDir = null;
+
+const singleModeCard = document.getElementById('singleModeCard');
+const chunkModeCard = document.getElementById('chunkModeCard');
+const rangeModeCard = document.getElementById('rangeModeCard');
+
+const radioSingle = document.getElementById('radioSingle');
+const radioChunk = document.getElementById('radioChunk');
+const radioRange = document.getElementById('radioRange');
+
+const singleModeContent = document.getElementById('singleModeContent');
+const chunkModeContent = document.getElementById('chunkModeContent');
+const rangeModeContent = document.getElementById('rangeModeContent');
+
+const doSplitBtn = document.getElementById('doSplitBtn');
+const chunkSizeInput = document.getElementById('chunkSizeInput');
+const rangeInput = document.getElementById('rangeInput');
+
+function selectSplitMode(mode) {
+  splitMode = mode;
+
+  // Set radio checked states
+  if (radioSingle) radioSingle.checked = (mode === 'single');
+  if (radioChunk) radioChunk.checked = (mode === 'chunk');
+  if (radioRange) radioRange.checked = (mode === 'range');
+
+  // Toggle card highlighting
+  singleModeCard.classList.toggle('selected', mode === 'single');
+  chunkModeCard.classList.toggle('selected', mode === 'chunk');
+  rangeModeCard.classList.toggle('selected', mode === 'range');
+
+  singleModeCard.style.borderColor = (mode === 'single') ? '#2563eb' : '#e2e8f0';
+  singleModeCard.style.background = (mode === 'single') ? '#f0f7ff' : '#ffffff';
+  chunkModeCard.style.borderColor = (mode === 'chunk') ? '#2563eb' : '#e2e8f0';
+  chunkModeCard.style.background = (mode === 'chunk') ? '#f0f7ff' : '#ffffff';
+  rangeModeCard.style.borderColor = (mode === 'range') ? '#2563eb' : '#e2e8f0';
+  rangeModeCard.style.background = (mode === 'range') ? '#f0f7ff' : '#ffffff';
+
+  // Strictly show active inputs and hide all other mode inputs
+  if (singleModeContent) singleModeContent.style.display = (mode === 'single') ? 'block' : 'none';
+  if (chunkModeContent) chunkModeContent.style.display = (mode === 'chunk') ? 'block' : 'none';
+  if (rangeModeContent) rangeModeContent.style.display = (mode === 'range') ? 'block' : 'none';
+
+  updateSplitPlanPreview();
+}
+
+// Click listeners for cards
+singleModeCard.addEventListener('click', (e) => {
+  if (e.target !== radioSingle) selectSplitMode('single');
+});
+chunkModeCard.addEventListener('click', (e) => {
+  if (e.target !== chunkSizeInput && e.target !== radioChunk) selectSplitMode('chunk');
+});
+rangeModeCard.addEventListener('click', (e) => {
+  if (e.target !== rangeInput && e.target !== radioRange) selectSplitMode('range');
+});
+
+// Radio change listeners
+if (radioSingle) radioSingle.addEventListener('change', () => selectSplitMode('single'));
+if (radioChunk) radioChunk.addEventListener('change', () => selectSplitMode('chunk'));
+if (radioRange) radioRange.addEventListener('change', () => selectSplitMode('range'));
+
+chunkSizeInput.addEventListener('input', () => {
+  const n = parseInt(chunkSizeInput.value, 10);
+  if (!isNaN(n) && n > 0 && splitLoadedFile) {
+    const exampleEl = document.getElementById('chunkModeExampleText');
+    if (exampleEl) {
+      exampleEl.textContent = `e.g. ${splitLoadedFile.pages} pages / ${n} pages each → ${Math.ceil(splitLoadedFile.pages / n)} files`;
+    }
+  }
+  updateSplitPlanPreview();
+});
+
+rangeInput.addEventListener('input', updateSplitPlanPreview);
+
+function updateSplitPlanPreview() {
+  const preview = document.getElementById('splitPreviewCard');
+  if (!splitLoadedFile) {
+    preview.innerHTML = '<div style="color:#94a3b8">Load a PDF file to preview split details.</div>';
+    doSplitBtn.disabled = true;
+    doSplitBtn.textContent = 'Select a PDF file first';
+    return;
+  }
+
+  doSplitBtn.disabled = false;
+  const total = splitLoadedFile.pages;
+  const fileName = splitLoadedFile.name;
+  const baseName = fileName.replace(/\.[^/.]+$/, '');
+  const outFolder = customSplitOutputDir || `${baseName}_pages/`;
+
+  if (splitMode === 'single') {
+    preview.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid #f1f5f9">
+          <span style="color:#64748b">Source Pages:</span>
+          <strong style="color:#0f172a">${total}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid #f1f5f9">
+          <span style="color:#64748b">Mode:</span>
+          <strong style="color:#2563eb">Single</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid #f1f5f9">
+          <span style="color:#64748b">Output Count:</span>
+          <strong style="color:#16a34a;font-size:14px">${total} files</strong>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#64748b;line-height:1.6">
+        <strong>File Naming Preview:</strong><br>
+        • ${baseName}_page_1.pdf<br>
+        ${total > 2 ? `• ${baseName}_page_2.pdf<br>...<br>• ${baseName}_page_${total}.pdf<br>` : (total === 2 ? `• ${baseName}_page_2.pdf<br>` : '')}
+        <div style="margin-top:6px"><strong>Output Folder:</strong> <code>${outFolder}</code></div>
+      </div>
+    `;
+    doSplitBtn.textContent = `Split into ${total} Single Pages`;
+  } else if (splitMode === 'chunk') {
+    const n = Math.max(1, parseInt(chunkSizeInput.value, 10) || 1);
+    const chunks = Math.ceil(total / n);
+    
+    const previewItems = [];
+    for (let s = 0; s < total && previewItems.length < 3; s += n) {
+      const e = Math.min(s + n, total);
+      previewItems.push(`• ${baseName}_part_${s + 1}-${e}.pdf (pages ${s + 1}–${e})`);
+    }
+    if (chunks > 3) {
+      previewItems.push(`<em>...and ${chunks - 3} more file(s)</em>`);
+    }
+
+    preview.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid #f1f5f9">
+          <span style="color:#64748b">Source Pages:</span>
+          <strong style="color:#0f172a">${total}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid #f1f5f9">
+          <span style="color:#64748b">Mode:</span>
+          <strong style="color:#2563eb">Chunk</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid #f1f5f9">
+          <span style="color:#64748b">Output Count:</span>
+          <strong style="color:#16a34a;font-size:14px">${chunks} files</strong>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#64748b;line-height:1.6">
+        <strong>Chunk Breakdown (${n} pages per file):</strong><br>
+        ${previewItems.join('<br>')}<br>
+        ${total % n !== 0 ? `<span style="color:#854d0e">Note: Last file will contain remaining ${total % n} page(s).</span><br>` : ''}
+        <div style="margin-top:6px"><strong>Output Folder:</strong> <code>${outFolder}</code></div>
+      </div>
+    `;
+    doSplitBtn.textContent = `Split into ${chunks} Files (${n} pages each)`;
+  } else if (splitMode === 'range') {
+    const raw = rangeInput.value || '';
+    const parts = raw.split(',').map((s) => s.trim()).filter(Boolean);
+    const validParts = [];
+    const breakdown = [];
+
+    parts.forEach((p) => {
+      let s, e;
+      if (p.includes('-')) {
+        const seg = p.split('-').map((x) => x.trim());
+        s = parseInt(seg[0], 10);
+        e = parseInt(seg[1] || seg[0], 10);
+      } else {
+        s = parseInt(p, 10);
+        e = s;
+      }
+      if (!isNaN(s) && !isNaN(e) && s >= 1 && s <= total && e >= s) {
+        const endPage = Math.min(e, total);
+        validParts.push({ s, e: endPage });
+        if (breakdown.length < 4) {
+          breakdown.push(`• ${s === endPage ? `Page ${s}` : `Pages ${s}–${endPage}`}`);
+        }
+      }
+    });
+
+    const count = validParts.length;
+    if (count > 4) breakdown.push(`<em>...and ${count - 4} more range(s)</em>`);
+
+    preview.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid #f1f5f9">
+          <span style="color:#64748b">Source Pages:</span>
+          <strong style="color:#0f172a">${total}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid #f1f5f9">
+          <span style="color:#64748b">Mode:</span>
+          <strong style="color:#2563eb">Custom</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid #f1f5f9">
+          <span style="color:#64748b">Output Count:</span>
+          <strong style="color:#16a34a;font-size:14px">${count} files</strong>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#64748b;line-height:1.6">
+        <strong>Specified Ranges:</strong><br>
+        ${breakdown.length ? breakdown.join('<br>') : '<span style="color:#ef4444">No valid ranges specified</span>'}<br>
+        <div style="margin-top:6px"><strong>Output Folder:</strong> <code>${outFolder}</code></div>
+      </div>
+    `;
+    doSplitBtn.textContent = `Split into ${count} Custom Files`;
+    if (count === 0) doSplitBtn.disabled = true;
+  }
+}
+
+async function loadFileForSplit(filePath) {
+  if (!filePath) return;
+  appendLog('splitLog', `Inspecting PDF metadata for: ${filePath}`);
+  const info = await window.webpdf.getPdfInfo(filePath);
+
+  if (info && info.success) {
+    splitLoadedFile = info;
+    document.getElementById('splitLoadedText').innerHTML = `
+      <strong style="color:#0f172a;font-size:15px">${info.name}</strong><br>
+      <span style="color:#16a34a;font-weight:600">${info.pages} pages</span> • 
+      <span style="color:#64748b">${info.sizeKB} KB</span>
+    `;
+
+    const baseName = info.name.replace(/\.[^/.]+$/, '');
+    document.getElementById('splitFolderDisplay').textContent = customSplitOutputDir || `Dedicated folder: ${baseName}_pages/`;
+    
+    // Update example text in Mode A and Mode B
+    const singleExample = document.getElementById('singleModeExampleText');
+    if (singleExample) singleExample.textContent = `e.g. ${info.pages}-page PDF → ${info.pages} separate files (_page_1.pdf ... _page_${info.pages}.pdf)`;
+    
+    const chunkExample = document.getElementById('chunkModeExampleText');
+    const n = Math.max(1, parseInt(chunkSizeInput.value, 10) || 2);
+    if (chunkExample) chunkExample.textContent = `e.g. ${info.pages} pages / ${n} pages each → ${Math.ceil(info.pages / n)} files`;
+
+    appendLog('splitLog', `Loaded: ${info.name} (${info.pages} pages, ${info.sizeKB} KB)`);
+    updateSplitPlanPreview();
+  } else {
+    alert('Failed to load PDF info: ' + ((info && info.error) || 'Invalid file'));
+    appendLog('splitLog', 'Failed to inspect PDF: ' + ((info && info.error) || 'Unknown error'));
+  }
+}
+
+document.getElementById('selectSplitFileBtn').addEventListener('click', async (e) => {
+  e.stopPropagation();
+  const files = await window.webpdf.openFiles();
+  if (files && files.length) {
+    await loadFileForSplit(files[0]);
+  }
+});
+
+document.getElementById('splitDropZone').addEventListener('click', async () => {
+  const files = await window.webpdf.openFiles();
+  if (files && files.length) {
+    await loadFileForSplit(files[0]);
+  }
+});
+
+document.getElementById('splitDropZone').addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.currentTarget.classList.add('dragover');
+});
+document.getElementById('splitDropZone').addEventListener('dragleave', (e) => {
+  e.currentTarget.classList.remove('dragover');
+});
+document.getElementById('splitDropZone').addEventListener('drop', async (e) => {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  const files = e.dataTransfer.files;
+  if (files && files.length) {
+    const fp = window.webpdf.getPathForFile(files[0]);
+    if (fp) await loadFileForSplit(fp);
+  }
+});
+
+document.getElementById('changeSplitFolderBtn').addEventListener('click', async () => {
+  const folder = await window.webpdf.selectFolder();
+  if (folder) {
+    customSplitOutputDir = folder;
+    document.getElementById('splitFolderDisplay').textContent = folder;
+    updateSplitPlanPreview();
+    appendLog('splitLog', `Selected custom output directory: ${folder}`);
+  }
+});
+
+// Real-time Split Progress Listener
+window.webpdf.onSplitProgress((data) => {
+  const progressText = document.getElementById('splitProgressText');
+  const progressPercent = document.getElementById('splitProgressPercent');
+  const progressFill = document.getElementById('splitProgressBarFill');
+
+  if (data.mode === 'single') {
+    progressText.textContent = `Splitting page ${data.current} of ${data.total} (${data.file})...`;
+  } else {
+    progressText.textContent = `Creating part ${data.current} of ${data.total} (${data.file})...`;
+  }
+  progressPercent.textContent = `${data.percent}%`;
+  progressFill.style.width = `${data.percent}%`;
+});
+
+// Execute Split Action
+document.getElementById('doSplitBtn').addEventListener('click', async () => {
+  if (!splitLoadedFile) {
+    alert('Please select a PDF file first.');
+    return;
+  }
+
+  let rule;
+  if (splitMode === 'single') {
+    rule = { mode: 'single' };
+  } else if (splitMode === 'chunk') {
+    const n = Math.max(1, parseInt(chunkSizeInput.value, 10) || 1);
+    rule = { mode: 'chunk', size: n };
+  } else {
+    rule = { mode: 'range', ranges: rangeInput.value };
+  }
+
+  const btn = document.getElementById('doSplitBtn');
+  const progressBox = document.getElementById('splitProgressBox');
+  const resultBox = document.getElementById('splitResultBox');
+  const resultDetails = document.getElementById('splitResultDetails');
+
+  btn.disabled = true;
+  resultBox.style.display = 'none';
+  progressBox.style.display = 'block';
+
+  appendLog('splitLog', `Executing split (${splitMode} mode) on: ${splitLoadedFile.name}`);
+
+  try {
+    const res = await window.webpdf.splitPdf({
+      filePath: splitLoadedFile.path,
+      rule: rule,
+      outputDir: customSplitOutputDir || null
+    });
+
+    if (res && res.success) {
+      lastSplitOutputDir = res.outputDir;
+      resultBox.style.display = 'block';
+      resultDetails.innerHTML = `
+        <strong>Total Files Created:</strong> ${res.outputs.length} verified PDFs<br>
+        <strong>Output Folder:</strong> ${res.outputDir}<br>
+        <div style="margin-top:8px;font-size:12px;color:#64748b">
+          ${res.outputs.slice(0, 4).map((o) => `• ${o.name} (${o.sizeKB} KB)`).join('<br>')}
+          ${res.outputs.length > 4 ? `<br><em>...and ${res.outputs.length - 4} more files</em>` : ''}
+        </div>
+      `;
+      appendLog('splitLog', `Split completed successfully: ${res.outputs.length} files created in ${res.outputDir}`);
+    } else {
+      throw new Error((res && res.error) || 'Failed to split PDF.');
+    }
+  } catch (err) {
+    alert('Split Error: ' + err.message);
+    appendLog('splitLog', 'Error: ' + err.message);
+  } finally {
+    progressBox.style.display = 'none';
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('openSplitFolderBtn').addEventListener('click', async () => {
+  if (lastSplitOutputDir) {
+    await window.webpdf.showInFolder(lastSplitOutputDir);
+  }
+});
+
+// -------------------------------------------------------------
+// 4. i18n & BRANDING SETUP
+// -------------------------------------------------------------
+const langSelector = document.getElementById('langSelector');
+if (langSelector) {
+  langSelector.addEventListener('change', (e) => {
+    if (window.i18n) window.i18n.loadLanguage(e.target.value);
+  });
+}
+
+// Open mavvi.online externally via shell.openExternal
+async function openMavviSite(e) {
+  if (e) e.preventDefault();
+  try {
+    if (window.webpdf && window.webpdf.openExternal) {
+      await window.webpdf.openExternal('https://mavvi.online');
+    } else {
+      window.open('https://mavvi.online', '_blank');
+    }
+  } catch (err) {
+    console.error('Failed to open external link:', err);
+  }
+}
+
+const mavviFooterLink = document.getElementById('mavviFooterLink');
+if (mavviFooterLink) mavviFooterLink.addEventListener('click', openMavviSite);
+
+const visitWebsiteBtn = document.getElementById('visitWebsiteBtn');
+if (visitWebsiteBtn) visitWebsiteBtn.addEventListener('click', openMavviSite);
+
+// About Modal Handlers
+const aboutModal = document.getElementById('aboutModal');
+function showAboutModal() {
+  if (aboutModal) aboutModal.style.display = 'flex';
+}
+function hideAboutModal() {
+  if (aboutModal) aboutModal.style.display = 'none';
+}
+
+const topAboutBtn = document.getElementById('topAboutBtn');
+if (topAboutBtn) topAboutBtn.addEventListener('click', showAboutModal);
+
+const footerAboutLink = document.getElementById('footerAboutLink');
+if (footerAboutLink) footerAboutLink.addEventListener('click', showAboutModal);
+
+const closeAboutModalBtn = document.getElementById('closeAboutModalBtn');
+if (closeAboutModalBtn) closeAboutModalBtn.addEventListener('click', hideAboutModal);
+
+if (aboutModal) {
+  aboutModal.addEventListener('click', (e) => {
+    if (e.target === aboutModal) hideAboutModal();
+  });
+}
+
+// Initialize i18n on startup
+if (window.i18n) {
+  const savedLang = localStorage.getItem('webpdf_studio_lang') || 'en';
+  window.i18n.loadLanguage(savedLang);
+}
+
+// Initial View
+switchView('dashboard');
+</script>
+
+<!-- Footer with Branding -->
+<footer style="height:36px;min-height:36px;background:#ffffff;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:12px;color:#64748b;user-select:none;">
+  <div style="display:flex;align-items:center;gap:6px">
+    <span data-i18n="footer_brand">Made with ❤️ by mavvi.online</span>
+    <a href="#" id="mavviFooterLink" style="color:#2563eb;text-decoration:none;font-weight:600">mavvi.online</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span id="footerAboutLink" style="cursor:pointer;color:#475569;text-decoration:underline" data-i18n="tab_about">About</span>
+    <span style="color:#cbd5e1">•</span>
+    <span style="font-weight:600;color:#2563eb" data-i18n="about_version">Version 4.0 BASIC - VERIFIED</span>
+  </div>
+</footer>
+
+<!-- About Modal -->
+<div id="aboutModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#ffffff;border-radius:16px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.15),0 10px 10px -5px rgba(0,0,0,0.08);max-width:440px;width:90%;padding:28px;text-align:center;border:1px solid #e2e8f0;">
+    <img src="../../assets/icon.png" style="width:68px;height:68px;border-radius:14px;box-shadow:0 4px 12px rgba(37,99,235,0.3);margin-bottom:12px;object-fit:cover;">
+    <h2 style="font-size:20px;font-weight:700;color:#0f172a;margin-bottom:4px" data-i18n="about_title">About WebPDF Studio</h2>
+    <div style="font-size:12px;font-weight:700;color:#2563eb;margin-bottom:12px" data-i18n="about_version">Version 4.0 BASIC - VERIFIED</div>
+    <p style="font-size:13px;color:#475569;line-height:1.55;margin-bottom:16px" data-i18n="about_desc">
+      High-performance desktop PDF studio for creating, merging, and splitting documents with exact precision.
+    </p>
+    <div style="font-size:12px;color:#64748b;margin-bottom:22px" data-i18n="about_developer">Developed with ❤️ by mavvi.online</div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button id="visitWebsiteBtn" class="btn-primary" style="padding:9px 18px;font-size:13px" data-i18n="btn_visit_site">Visit Website</button>
+      <button id="closeAboutModalBtn" class="btn-secondary" style="padding:9px 18px;font-size:13px" data-i18n="btn_close">Close</button>
+    </div>
+  </div>
+</div>
+</body>
 </html>
