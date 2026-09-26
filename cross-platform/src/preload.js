@@ -1,4 +1,4 @@
-// WebPDF Studio v4.02 - preload.js
+// WebPDF Studio v4.0.1 FINAL BASIC - preload.js
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('webpdf', {

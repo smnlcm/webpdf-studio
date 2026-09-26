@@ -1,9 +1,9 @@
-// WebPDF Studio v4.02 - forge.config.js
+// WebPDF Studio v4.0.1 FINAL BASIC - forge.config.js
 module.exports = {
   packagerConfig: {
     asar: true,
-    name: 'WebPDF-Studio-v4.02',
-    executableName: 'WebPDF-Studio-v4.02',
+    name: 'WebPDF-Studio-v4.0.1',
+    executableName: 'WebPDF-Studio-v4.0.1',
     icon: './src/renderer/icon',
     extraResource: []
   },

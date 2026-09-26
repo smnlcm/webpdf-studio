@@ -440,18 +440,18 @@ body {
     <span>•</span>
     <button id="topAboutBtn" class="btn-secondary" style="padding:5px 12px;font-size:12px;display:inline-flex;align-items:center;gap:4px;" data-i18n="tab_about">ℹ️ About</button>
     <span>•</span>
-    <span style="color:#16a34a;font-weight:600">● Ready</span>
+    <span style="color:#16a34a;font-weight:600" data-i18n="ready_status">● Ready</span>
   </div>
 </div>
 
 <!-- Navigation Tabs -->
 <div class="nav-bar">
-  <div class="nav-tab active" data-view="dashboard">Dashboard</div>
+  <div class="nav-tab active" data-view="dashboard" data-i18n="tab_dashboard">Dashboard</div>
   <div class="nav-tab" data-view="convert" data-i18n="tab_create">Create PDF</div>
   <div class="nav-tab" data-view="merge" data-i18n="tab_merge">Merge PDFs</div>
   <div class="nav-tab" data-view="split" data-i18n="tab_split">Split PDF</div>
-  <div class="nav-tab" data-view="compress">Compress</div>
-  <div class="nav-tab" data-view="ocr">OCR</div>
+  <div class="nav-tab" data-view="compress" data-i18n="tab_compress">Compress</div>
+  <div class="nav-tab" data-view="ocr" data-i18n="tab_ocr">OCR</div>
 </div>
 
 <!-- Main Views Container -->
@@ -460,58 +460,58 @@ body {
   <!-- DASHBOARD VIEW -->
   <div id="dashboardView" class="tool-view active">
     <div class="tool-card">
-      <h1 style="font-size:22px;margin-bottom:6px">WebPDF Studio v4.02 — Engine Verified</h1>
-      <p style="color:#64748b;font-size:14px;margin-bottom:20px">
+      <h1 style="font-size:22px;margin-bottom:6px" data-i18n="dashboard_title">WebPDF Studio v4.0.1 FINAL BASIC — Engine Verified</h1>
+      <p style="color:#64748b;font-size:14px;margin-bottom:20px" data-i18n="dashboard_subtitle">
         Fully optimized for Windows, large 300+ page documents, and Turkish characters.
       </p>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px">
-          <div style="font-weight:700;color:#166534;margin-bottom:8px">✅ Verified Direct File Saving</div>
-          <p style="font-size:12.5px;color:#334155;line-height:1.5">
+          <div style="font-weight:700;color:#166534;margin-bottom:8px" data-i18n="dash_card1_title">✅ Verified Direct File Saving</div>
+          <p style="font-size:12.5px;color:#334155;line-height:1.5" data-i18n="dash_card1_desc">
             Save locations are prompted directly via native Windows dialogs. Files are written directly to disk and verified (size > 0), resolving the Adobe Acrobat "File cannot be found" issue.
           </p>
         </div>
 
         <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px">
-          <div style="font-weight:700;color:#1d4ed8;margin-bottom:8px">⭐ Single-Page Mode for Split</div>
-          <p style="font-size:12.5px;color:#334155;line-height:1.5">
+          <div style="font-weight:700;color:#1d4ed8;margin-bottom:8px" data-i18n="dash_card2_title">⭐ Single-Page Mode for Split</div>
+          <p style="font-size:12.5px;color:#334155;line-height:1.5" data-i18n="dash_card2_desc">
             Extract every single page into an individual 1-page PDF file (e.g. 50 pages → 50 separate PDFs) automatically organized into a dedicated output folder.
           </p>
         </div>
 
         <div style="background:#fefce8;border:1px solid #fef08a;border-radius:10px;padding:16px">
-          <div style="font-weight:700;color:#854d0e;margin-bottom:8px">⚡ 300+ Page & Large File Performance</div>
-          <p style="font-size:12.5px;color:#334155;line-height:1.5">
+          <div style="font-weight:700;color:#854d0e;margin-bottom:8px" data-i18n="dash_card3_title">⚡ 300+ Page & Large File Performance</div>
+          <p style="font-size:12.5px;color:#334155;line-height:1.5" data-i18n="dash_card3_desc">
             Heavy files (like 330-page lecture notes) are processed using worker threads and streamed directly to disk, preventing memory crashes and IPC bottlenecks.
           </p>
         </div>
 
         <div style="background:#fdf2f8;border:1px solid #fbcfe8;border-radius:10px;padding:16px">
-          <div style="font-weight:700;color:#9d174d;margin-bottom:8px">🇹🇷 Turkish Character & Path Support</div>
-          <p style="font-size:12.5px;color:#334155;line-height:1.5">
+          <div style="font-weight:700;color:#9d174d;margin-bottom:8px" data-i18n="dash_card4_title">🇹🇷 Turkish Character & Path Support</div>
+          <p style="font-size:12.5px;color:#334155;line-height:1.5" data-i18n="dash_card4_desc">
             Full support for Turkish characters (<code>ı</code>, <code>ş</code>, <code>ğ</code>, <code>ç</code>, <code>ö</code>, <code>ü</code>) and Windows paths without path corruption or broken backslashes.
           </p>
         </div>
       </div>
 
       <div style="display:flex;gap:12px">
-        <button class="btn-primary" onclick="switchView('convert')">Create PDF from HTML →</button>
-        <button class="btn-secondary" onclick="switchView('merge')">Merge PDFs →</button>
-        <button class="btn-secondary" onclick="switchView('split')">Split PDF (Single Mode) →</button>
+        <button id="dashCreatePdfBtn" class="btn-primary" onclick="switchView('convert')" data-i18n="btn_create_html">Create PDF from HTML →</button>
+        <button id="dashMergePdfsBtn" class="btn-secondary" onclick="switchView('merge')" data-i18n="btn_merge_pdfs">Merge PDFs →</button>
+        <button id="dashSplitPdfBtn" class="btn-secondary" onclick="switchView('split'); if (window.selectSplitMode) window.selectSplitMode('single');" data-i18n="btn_split_single">Split PDF (Single Mode) →</button>
       </div>
 
-      <div class="log-box" id="dashboardLog">System Ready: WebPDF Studio v4.02 initialized.</div>
+      <div class="log-box" id="dashboardLog">System Ready: WebPDF Studio v4.0.1 FINAL BASIC initialized.</div>
     </div>
   </div>
 
   <!-- CONVERT VIEW (HTML to PDF) -->
   <div id="convertView" class="editor-section">
     <div class="toolbar">
-      <button class="btn-primary" id="createPdfBtn">Create PDF</button>
-      <button class="btn-secondary" id="chooseHtmlFileBtn" style="display:inline-flex;align-items:center;gap:6px" type="button">📁 Choose HTML File</button>
+      <button class="btn-primary" id="createPdfBtn" data-i18n="btn_create_pdf">Create PDF</button>
+      <button class="btn-secondary" id="chooseHtmlFileBtn" style="display:inline-flex;align-items:center;gap:6px" type="button" data-i18n="btn_choose_html">📁 Choose HTML File</button>
       <span id="chosenFileName" style="font-size:12px;color:#2563eb;font-weight:600"></span>
-      <button class="btn-secondary" id="refreshPreviewBtn">Refresh Preview</button>
+      <button class="btn-secondary" id="refreshPreviewBtn" data-i18n="btn_refresh_preview">Refresh Preview</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:14px;font-size:12px;color:#64748b">
         <span>Page: A4 (Portrait)</span>
         <span>•</span>
@@ -534,7 +534,7 @@ body {
   </style>
 </head>
 <body>
-  <h1>WebPDF Studio v4.02 — Document Test</h1>
+  <h1>WebPDF Studio v4.0.1 FINAL BASIC — Document Test</h1>
   <p><span class="badge">Status: Verified</span></p>
   <p>This document is generated directly using Chromium printToPDF with verified disk serialization. Adobe Acrobat opens this file seamlessly without errors.</p>
   <p>Türkçe karakter testi: ÇŞĞÜÖİ ı ş ğ ü ö ç.</p>
@@ -781,6 +781,34 @@ body {
 
 </div>
 
+<!-- Footer with Full Branding (Fixed) -->
+<footer style="text-align:center;padding:8px 24px;background:#f8fafc;font-size:11px;border-top:1px solid #e2e8f0;color:#64748b;user-select:none;display:flex;align-items:center;justify-content:center;gap:8px;">
+  <span>Made with ❤️ by <a href="#" id="mavviFooterLink" style="color:#2563eb;text-decoration:none;font-weight:600">mavvi.online</a></span>
+  <span>|</span>
+  <span>© 2026 mavvi.online - Free &amp; Offline PDF Toolkit</span>
+  <span>|</span>
+  <a href="#" id="mavviRepoLink" style="color:#2563eb;text-decoration:none">github.com/smnlcm/webpdf-studio</a>
+</footer>
+
+<!-- About Modal -->
+<div id="aboutModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#ffffff;border-radius:16px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.15),0 10px 10px -5px rgba(0,0,0,0.08);max-width:460px;width:90%;padding:28px;text-align:center;border:1px solid #e2e8f0;">
+    <img src="../../assets/icon.png" style="width:68px;height:68px;border-radius:14px;box-shadow:0 4px 12px rgba(37,99,235,0.3);margin-bottom:12px;object-fit:cover;">
+    <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:4px">WebPDF Studio v4.0.1 FINAL BASIC</h2>
+    <div style="font-size:12px;font-weight:700;color:#2563eb;margin-bottom:12px">Powered by mavvi.online</div>
+    <p style="font-size:13px;color:#475569;line-height:1.55;margin-bottom:16px">
+      High-performance desktop PDF studio for creating, merging, and splitting documents with exact precision.
+    </p>
+    <div style="font-size:11.5px;color:#64748b;margin-bottom:20px">© 2026 mavvi.online — GPL-3.0 License</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button id="visitWebsiteBtn" class="btn-primary" style="padding:8px 14px;font-size:12px">Visit mavvi.online</button>
+      <button id="aboutGithubBtn" class="btn-secondary" style="padding:8px 14px;font-size:12px">GitHub</button>
+      <button id="aboutIssueBtn" class="btn-secondary" style="padding:8px 14px;font-size:12px">Report Issue</button>
+      <button id="closeAboutModalBtn" class="btn-secondary" style="padding:8px 14px;font-size:12px">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // Navigation Tab Switching
 const navTabs = document.querySelectorAll('.nav-tab');
@@ -804,7 +832,20 @@ function switchView(name) {
     }
   });
 }
+window.switchView = switchView;
 navTabs.forEach((tab) => tab.addEventListener('click', () => switchView(tab.dataset.view)));
+
+const dashCreatePdfBtn = document.getElementById('dashCreatePdfBtn');
+if (dashCreatePdfBtn) dashCreatePdfBtn.addEventListener('click', () => switchView('convert'));
+
+const dashMergePdfsBtn = document.getElementById('dashMergePdfsBtn');
+if (dashMergePdfsBtn) dashMergePdfsBtn.addEventListener('click', () => switchView('merge'));
+
+const dashSplitPdfBtn = document.getElementById('dashSplitPdfBtn');
+if (dashSplitPdfBtn) dashSplitPdfBtn.addEventListener('click', () => {
+  switchView('split');
+  if (window.selectSplitMode) window.selectSplitMode('single');
+});
 
 // Logging helper
 function appendLog(elementId, message) {
@@ -1667,67 +1708,6 @@ document.getElementById('openSplitFolderBtn').addEventListener('click', async ()
 // -------------------------------------------------------------
 // 4. i18n & BRANDING SETUP
 // -------------------------------------------------------------
-const langSelector = document.getElementById('langSelector');
-if (langSelector) {
-  langSelector.addEventListener('change', (e) => {
-    if (window.i18n) window.i18n.loadLanguage(e.target.value);
-  });
-}
-
-// Open mavvi.online externally via shell.openExternal
-async function openMavviSite(e) {
-  if (e) e.preventDefault();
-  try {
-    if (window.webpdf && window.webpdf.openExternal) {
-      await window.webpdf.openExternal('https://mavvi.online');
-    } else {
-      window.open('https://mavvi.online', '_blank');
-    }
-  } catch (err) {
-    console.error('Failed to open external link:', err);
-  }
-}
-
-const mavviFooterLink = document.getElementById('mavviFooterLink');
-if (mavviFooterLink) mavviFooterLink.addEventListener('click', openMavviSite);
-
-const visitWebsiteBtn = document.getElementById('visitWebsiteBtn');
-if (visitWebsiteBtn) visitWebsiteBtn.addEventListener('click', openMavviSite);
-
-// About Modal Handlers
-const aboutModal = document.getElementById('aboutModal');
-function showAboutModal() {
-  if (aboutModal) aboutModal.style.display = 'flex';
-}
-function hideAboutModal() {
-  if (aboutModal) aboutModal.style.display = 'none';
-}
-
-const topAboutBtn = document.getElementById('topAboutBtn');
-if (topAboutBtn) topAboutBtn.addEventListener('click', showAboutModal);
-
-const footerAboutLink = document.getElementById('footerAboutLink');
-if (footerAboutLink) footerAboutLink.addEventListener('click', showAboutModal);
-
-const closeAboutModalBtn = document.getElementById('closeAboutModalBtn');
-if (closeAboutModalBtn) closeAboutModalBtn.addEventListener('click', hideAboutModal);
-
-if (aboutModal) {
-  aboutModal.addEventListener('click', (e) => {
-    if (e.target === aboutModal) hideAboutModal();
-  });
-}
-
-// Initialize i18n on startup
-if (window.i18n) {
-  const savedLang = localStorage.getItem('webpdf_studio_lang') || 'en';
-  window.i18n.loadLanguage(savedLang);
-}
-
-// Initial View
-// Console Watermark
-console.log("%c WebPDF Studio by mavvi.online https://mavvi.online ", "color: #8A2BE2; font-size:20px; font-weight:bold;");
-
 async function openExternalUrl(url, e) {
   if (e) e.preventDefault();
   try {
@@ -1741,6 +1721,7 @@ async function openExternalUrl(url, e) {
     console.error('Failed to open external url:', err);
   }
 }
+window.openExternalUrl = openExternalUrl;
 
 const mavviHeaderLink = document.getElementById('mavviHeaderLink');
 if (mavviHeaderLink) mavviHeaderLink.addEventListener('click', (e) => openExternalUrl('https://mavvi.online', e));
@@ -1781,42 +1762,25 @@ if (aboutModal) {
   });
 }
 
+// i18n Language Selector Handler
+const langSelector = document.getElementById('langSelector');
+if (langSelector) {
+  langSelector.addEventListener('change', (e) => {
+    if (window.i18n) window.i18n.loadLanguage(e.target.value);
+  });
+}
+
 // Initialize i18n on startup
 if (window.i18n) {
   const savedLang = localStorage.getItem('webpdf_studio_lang') || 'en';
   window.i18n.loadLanguage(savedLang);
 }
 
+// Console Watermark
+console.log("%c WebPDF Studio v4.0.1 FINAL BASIC by mavvi.online https://mavvi.online ", "color: #8A2BE2; font-size:16px; font-weight:bold;");
+
 // Initial View
 switchView('dashboard');
 </script>
-
-<!-- Footer with Full Branding (Fixed) -->
-<footer style="text-align:center;padding:8px 24px;background:#f8fafc;font-size:11px;border-top:1px solid #e2e8f0;color:#64748b;user-select:none;display:flex;align-items:center;justify-content:center;gap:8px;">
-  <span>Made with ❤️ by <a href="#" id="mavviFooterLink" style="color:#2563eb;text-decoration:none;font-weight:600">mavvi.online</a></span>
-  <span>|</span>
-  <span>© 2026 mavvi.online - Free &amp; Offline PDF Toolkit</span>
-  <span>|</span>
-  <a href="#" id="mavviRepoLink" style="color:#2563eb;text-decoration:none">github.com/smnlcm/webpdf-studio</a>
-</footer>
-
-<!-- About Modal -->
-<div id="aboutModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;">
-  <div style="background:#ffffff;border-radius:16px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.15),0 10px 10px -5px rgba(0,0,0,0.08);max-width:460px;width:90%;padding:28px;text-align:center;border:1px solid #e2e8f0;">
-    <img src="../../assets/icon.png" style="width:68px;height:68px;border-radius:14px;box-shadow:0 4px 12px rgba(37,99,235,0.3);margin-bottom:12px;object-fit:cover;">
-    <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:4px">WebPDF Studio v4.0.1 FINAL BASIC</h2>
-    <div style="font-size:12px;font-weight:700;color:#2563eb;margin-bottom:12px">Powered by mavvi.online</div>
-    <p style="font-size:13px;color:#475569;line-height:1.55;margin-bottom:16px">
-      High-performance desktop PDF studio for creating, merging, and splitting documents with exact precision.
-    </p>
-    <div style="font-size:11.5px;color:#64748b;margin-bottom:20px">© 2026 mavvi.online — GPL-3.0 License</div>
-    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-      <button id="visitWebsiteBtn" class="btn-primary" style="padding:8px 14px;font-size:12px">Visit mavvi.online</button>
-      <button id="aboutGithubBtn" class="btn-secondary" style="padding:8px 14px;font-size:12px">GitHub</button>
-      <button id="aboutIssueBtn" class="btn-secondary" style="padding:8px 14px;font-size:12px">Report Issue</button>
-      <button id="closeAboutModalBtn" class="btn-secondary" style="padding:8px 14px;font-size:12px">Close</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>

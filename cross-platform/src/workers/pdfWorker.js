@@ -1,4 +1,4 @@
-// WebPDF Studio v4.02 - pdfWorker.js - High-performance PDF Worker (Optimized)
+// WebPDF Studio v4.0.1 FINAL BASIC - pdfWorker.js - High-performance PDF Worker (Optimized)
 const { parentPort } = require('worker_threads');
 const fs = require('fs');
 const path = require('path');

@@ -1,5 +1,5 @@
-// WebPDF Studio v4.02 - main.js
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+// WebPDF Studio v4.0.1 FINAL BASIC - main.js
+const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { Worker } = require('worker_threads');
@@ -13,13 +13,14 @@ function createMainWindow() {
     height: 900,
     minWidth: 1000,
     minHeight: 700,
-    title: 'WebPDF Studio v4.0.1 by mavvi.online',
+    title: 'WebPDF Studio v4.0.1 FINAL BASIC by mavvi.online',
     icon: path.join(__dirname, '../../build/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, '../preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: false,
+      devTools: true
     },
     backgroundColor: '#f8fafc',
     autoHideMenuBar: true,
@@ -29,6 +30,16 @@ function createMainWindow() {
 
   mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   mainWindow.setMenu(null);
+
+  // Enable Ctrl+Shift+I / F12 DevTools accelerator
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown') {
+      if (((input.control || input.meta) && input.shift && input.key.toLowerCase() === 'i') || input.key === 'F12') {
+        mainWindow.webContents.toggleDevTools();
+        event.preventDefault();
+      }
+    }
+  });
 
   mainWindow.webContents.on('did-fail-load', (e, code, desc) => {
     console.error('[WebPDF] Failed to load:', code, desc);
@@ -48,7 +59,24 @@ function createMainWindow() {
   }, 1000);
 }
 
-app.whenReady().then(createMainWindow);
+app.whenReady().then(() => {
+  createMainWindow();
+
+  globalShortcut.register('CommandOrControl+Shift+I', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.toggleDevTools();
+    }
+  });
+  globalShortcut.register('F12', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.toggleDevTools();
+    }
+  });
+});
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
@@ -309,7 +337,7 @@ ipcMain.handle('save-file', async (event, defaultName) => {
   const res = await dialog.showSaveDialog(mainWindow, {
     defaultPath: defaultName || 'document.pdf',
     filters: [{ name: 'PDF Document', extensions: ['pdf'] }],
-    title: 'Choose Destination - WebPDF Studio v4.02'
+    title: 'Choose Destination - WebPDF Studio v4.0.1 FINAL BASIC'
   });
   return res.filePath || null;
 });
